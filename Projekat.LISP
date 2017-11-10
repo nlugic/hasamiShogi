@@ -1,59 +1,46 @@
-(defun Game(n)
-  (GamePlay n 1 (* n 2) (* n 2) (initMatrix 1 n))
+(defun game (n)
+  (gamePlay n 1 (* n 2) (* n 2) (initMatrix 1 n))
 )
 
-(defun GamePlay(n p xN oN li)
-  (ShowMatrix2 n li)
+(defun gamePlay (n p xN oN li)
+  (showMatrix n li)
 )
-(defun initMatrix(i n)
-  (cond ((= i (+ n 1)) '())
-        ((< i 3) (cons (append (list i) (list (initRow 1 n 1))) (initMatrix (+ i 1) n)))
-        ((> i (- n 2)) (cons (append (list i) (list (initRow 1 n 2))) (initMatrix (+ i 1) n)))
-        ('t (cons (append (list i) (list (initRow 1 n 0))) (initMatrix (+ i 1) n)))
+(defun initMatrix (i n)
+  (cond ((= i (1+ n)) '())
+        ((< i 3) (cons (append (list i) (list (initRow 1 n 1))) (initMatrix (1+ i) n)))
+        ((> i (- n 2)) (cons (append (list i) (list (initRow 1 n 2))) (initMatrix (1+ i) n)))
+        ('t (cons (append (list i) (list (initRow 1 n 0))) (initMatrix (1+ i) n)))
 ))
 
-(defun initRow(j n el)
-  (cond ((= j (+ n 1)) '())
-        ('t (cons (list j el) (initRow (+ j 1) n el)))
+(defun initRow (j n el)
+  (cond ((= j (1+ n)) '())
+        ('t (cons (list j el) (initRow (1+ j) n el)))
 ))
 
-(defun ShowMatrix(i li n)
-  (cond ((= i (+ n 1)) '())
-        ('t (print i )(ShowRow 0 (car (cdr (assoc i li))) n) (ShowMatrix (+ i 1) li n))
-))
-
-(defun ShowRow(j li n)
-  (cond ((= j n) '())
-        ('t (format t "~D~%" (car (cdr (assoc j li)))) (ShowRow (+ j 1) li n))
-        ('t (write "(car (cdr (assoc j li))) -" ) (ShowRow (+ j 1) li n))
-))
-
-(defun ShowMatrix2(n li)
-(dotimes( g (+ 1 n))
+(defun showMatrix (n li)
+(dotimes( g (1+ n))
             (cond ((= g 0) (format t "  "))
                   ('t (format t " ~d " g ))
 ))
-  (dotimes(i (+ n 1))
-    (cond ((= i 0) (format t "  "))
+  (dotimes (i (1+ n))
+    (cond ((= i 0) (format t "   "))
                   ('t (print (indToChar i))
-                         (dotimes(j (+ n 1))
-                           (cond ((> j 0) (format t "|~a|" (RetLetter(car (cdr (assoc j (car (cdr (assoc i li)))))))))
-                                 ('t )
+                         (dotimes (j (1+ n))
+                           (cond ((> j 0) (format t "|~a|" (retLetter (getValue i j li))))
+                                 ('t '" ")
                            
 ))) 
 )))
 
-
-(defun RetLetter(el)
+(defun retLetter (el)
   (cond ((= el 0) "-")
         ((= el 1) "X")
         ('t "O"))
 )
 
-
 (defun charToInd (ch)
 	(let 
-		((abc '(A B C D E F G H I J K L M N O)))
+		((abc '(A B C D E F G H I J K L M N O P Q R S T U V W X Y Z)))
 		(cond 
 			((not (member ch abc)) '())
 			(t (1+ (position ch abc)))
@@ -63,7 +50,7 @@
 
 (defun indToChar (ind)
 	(let 
-		((abc '(A B C D E F G H I J K L M N O)))
+		((abc '(A B C D E F G H I J K L M N O P Q R S T U V W X Y Z)))
 		(cond 
 			((< ind 0) '())
 			((= ind 0) '())
@@ -98,7 +85,7 @@
 )
 
 (defun getValue (i j mat)
-	(assoc j (assoc i mat))
+	(car (cdr (assoc j (car (cdr (assoc i mat))))))
 )
 
 (defun unsetFigure (pos mat)
