@@ -1,42 +1,10 @@
-(defun startGame()
-  (game (startGameInternNRead '()) (startGameInternPRead '()))
+(defun game (n)
+  (gamePlay n 1 (* n 2) (* n 2) (initMatrix 1 n))
 )
 
-
-(defun startGameInternNRead(ERROR)
-  (progn 
-    (cond ((not (null ERROR)) (format t "~%Pogresno ste uneli Velecinu Table: "))
-    ('t (format t "~%Unesite Velecinu Table: ")))
-    (let* ((N (read)))
-           (cond ((and (> N 7) (< N 26)) N)
-                 ('t (startGameInternNRead 't))
-                 )
-           
+(defun gamePlay (n p xN oN li)
+  (showMatrix n li)
 )
-))
-
-(defun startGameInternPRead(ERROR)
-  (progn 
-    (cond ((not (null ERROR)) (format t "~%Pogresno ste uneli Prvog Igraca (1 X) (2 O): "))
-    ('t (format t "~%Unesite Prvog Igraca (1 X) (2 O): ")))
-    (let* ((N (read)))
-           (cond ((or (= N 1) (= N 2)) N)
-                 ('t (startGameInternPRead 't))
-                 )
-           
-)
-))
-
-
-
-(defun game (n p)
-  (gamePlay n (wrapMatrix p (* n 2) (* n 2) n (initMatrix 1 n)))
-)
-
-(defun wrapMatrix(p brX brO n mat)
-  (append mat (list (cons 64 (list (cons n (cons p (cons brX (cons brO (cons '0 '())))))))))
- 
-)  
 
 (defun initMatrix (i n)
   (cond ((= i (1+ n)) '())
