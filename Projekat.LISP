@@ -30,11 +30,19 @@
 
 
 (defun game (n p)
-  (gamePlay n (wrapMatrix p (* n 2) (* n 2) n (initMatrix 1 n)))
+  (gamePlay (wrapMatrix p (* n 2) (* n 2) n (initMatrix 1 n)))
 )
 
+(defun gamePlay(mat)
+  (showMatrix (getn mat) mat)
+  (gamePlay (setp (playTurn mat (promptForTurn (getp mat) '() mat)) (logxor (getp mat) 3 )))
+  
+)
+(defun playTurn(mat turn)
+(setFigure (car (cdr turn)) (getP mat) (unsetFigure (car turn) mat))
+)
 (defun wrapMatrix(p brX brO n mat)
-  (append mat (list (cons 64 (list (cons n (cons p (cons brX (cons brO (cons '0 '())))))))))
+  (append (list (cons 64 (list (cons n (cons p (cons brX (cons brO (cons '0 '())))))))) mat)
  
 )  
 
@@ -112,14 +120,17 @@
 (defun getFinished (mat)
   (caddddadr (assoc 64 mat))
 )
+(defun setP(mat p)
+ (append (list (cons 64 (list (cons (car(car (cdr (assoc 64 mat)))) (cons p (cdr (cdr (car (cdr (assoc 64 mat)))))))))) (cdr mat))
 
+)
 (defun promptForTurn (p err mat)
   (progn
     (cond
      ((not (null err)) (format t "~%Potez nije validan!"))
      (t (format t "~%~a je na potezu:" p))
      )
-    (let* ((turnList '((read) (read) (read) (read))) (turn (makeTurn turnList mat)))
+    (let* ((turnList (list (read) (read) (read) (read))) (turn (makeTurn turnList mat)))
       (cond
        ((null turn) (promptForTurn p t mat))
        (t turn)
@@ -141,10 +152,10 @@
 )
 
 (defun turnSyntaxInvalid (turn n p mat)
-  (let ((colF (charToInd (car turn)))
-        (colT (charToInd (caddr turn)))
-        (rowF (cadr turn))
-        (rowT (cadddr turn)))
+  (let ((rowF (charToInd (car turn)))
+        (rowT (charToInd (caddr turn)))
+        (colF (cadr turn))
+        (colT (cadddr turn)))
     (cond
      ((< (length turn) 4) t)
      ((equal (equal colF colT) (equal rowF rowT)) t)
@@ -169,7 +180,7 @@
 (defun unsetFigure (pos mat)
 	(cond
 		((null mat) '())
-		((equal (car pos) (caar mat)) (cons (cons (caar mat) (unsetFromRow (cdr pos) (cdar mat))) (cdr mat)))
+		((equal (car pos) (caar mat)) (cons (cons (caar mat) (list (unsetFromRow (cadr pos) (cadar mat)))) (cdr mat)))
 		(t (cons (car mat) (unsetFigure pos (cdr mat))))
 	)
 )
@@ -177,7 +188,7 @@
 (defun unsetFromRow (ind row)
 	(cond
 		((null row) '())
-		((equal ind (caar row)) (cons (list ind '-) (cdr row)))
+		((equal ind (caar row)) (cons (list ind 0) (cdr row)))
 		(t (cons (car row) (unsetFromRow ind (cdr row))))
 	)
 )
@@ -185,7 +196,7 @@
 (defun setFigure (pos val mat)
 	(cond
 		((null mat) '())
-		((equal (car pos) (caar mat)) (cons (cons (caar mat) (setToRow (cdr pos) (cdar mat) val)) (cdr mat)))
+		((equal (car pos) (caar mat)) (cons (list (caar mat) (setToRow (cadr pos) val (cadar mat))) (cdr mat)))
 		(t (cons (car mat) (setFigure pos val (cdr mat))))
 	)
 )
