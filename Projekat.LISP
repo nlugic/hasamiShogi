@@ -5,6 +5,7 @@
 (defun gamePlay (n p xN oN li)
   (showMatrix n li)
 )
+
 (defun initMatrix (i n)
   (cond ((= i (1+ n)) '())
         ((< i 3) (cons (append (list i) (list (initRow 1 n 1))) (initMatrix (1+ i) n)))
@@ -18,7 +19,7 @@
 ))
 
 (defun showMatrix (n li)
-(dotimes( g (1+ n))
+(dotimes (g (1+ n))
             (cond ((= g 0) (format t "  "))
                   ('t (format t " ~d " g ))
 ))
@@ -60,9 +61,44 @@
 	)
 )
 
-(defun makeTurn (turn)
+(defun getN (mat)
+  (caadr (assoc 64 mat))
+)
+
+(defun getP (mat)
+  (cadadr (assoc 64 mat))
+)
+
+(defun getNX (mat)
+  (caddadr (assoc 64 mat))
+)
+
+(defun getNO (mat)
+  (cadddadr (assoc 64 mat))
+)
+
+(defun getFinished (mat)
+  (caddddadr (assoc 64 mat))
+)
+
+(defun promptForTurn (p err mat)
+  (progn
+    (cond
+     ((not (null err)) (format t "~%Potez nije validan!"))
+     (t (format t "~%~a je na potezu:" p))
+     )
+    (let* ((turnList '((read) (read) (read) (read))) (turn (makeTurn turnList mat)))
+      (cond
+       ((null turn) (promptForTurn p t mat))
+       (t turn)
+       )
+      )
+    )
+)
+
+(defun makeTurn (turn mat)
 	(cond
-		((turnSyntaxInvalid turn) '())
+		((turnSyntaxInvalid turn (getN mat) (getP mat) mat) '())
 		(t 
 			(list 
 				(list (charToInd (car turn)) (cadr turn)) 
@@ -72,16 +108,26 @@
 	)
 )
 
-(defun turnSyntaxInvalid (turn)
-	(cond
-		((< (length turn) 4) t)
-		((equal (equal (car turn) (caddr turn)) (equal (cadr turn) (cadddr turn))) t)
-		((not (charToInd (car turn))) t)
-		((not (indToChar (cadr turn))) t)
-		((not (charToInd (caddr turn))) t)
-		((not (indToChar (cadddr turn))) t)
-		(t '())
-	)
+(defun turnSyntaxInvalid (turn n p mat)
+  (let ((colF (charToInd (car turn)))
+        (colT (charToInd (caddr turn)))
+        (rowF (cadr turn))
+        (rowT (cadddr turn)))
+    (cond
+     ((< (length turn) 4) t)
+     ((equal (equal colF colT) (equal rowF rowT)) t)
+     ((> colF n) t)
+     ((< colF 1) t)
+     ((> rowF n) t)
+     ((< rowF 1) t)
+     ((> colT n) t)
+     ((< colT 1) t)
+     ((> rowT n) t)
+     ((< rowT 1) t)
+     ((not (= (getValue rowF colF mat) p)) t)
+     ((> (getValue rowT colT mat) 0) t)
+     )
+    )
 )
 
 (defun getValue (i j mat)
