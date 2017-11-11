@@ -81,24 +81,32 @@
 
 (defun charToInd (ch)
 	(let 
-		((abc '(A B C D E F G H I J K L M N O P Q R S T U V W X Y Z)))
+	;	((abc '(A B C D E F G H I J K L M N O P Q R S T U V W X Y Z)))
+		((chCode (char-code (coerce ch 'character))))
 		(cond 
-			((not (member ch abc)) '())
-			(t (1+ (position ch abc)))
+			;((not (member ch abc)) '())
+			;(t (1+ (position ch abc)))
+			((> chCode 90) '())
+			((< chCode 65) '())
+			(t (- chCode 64))
 		)
 	)
 )
 
 (defun indToChar (ind)
-	(let 
-		((abc '(A B C D E F G H I J K L M N O P Q R S T U V W X Y Z)))
+	;(let
+	;	((abc '(A B C D E F G H I J K L M N O P Q R S T U V W X Y Z)))
 		(cond 
 			((< ind 0) '())
 			((= ind 0) '())
-			((> ind (length abc)) '())
-			(t (nth (1- ind) abc))
+			;((> ind (length abc)) '())
+			;(t (nth (1- ind) abc))
+			((> ind 26) '())
+			(t (car (list (intern (string (code-char (+ ind 64)))))))
+			;(t (coerce (code-char (+ ind 64)) 'symbol))
+			;(t (print (type-of (coerce (code-char (+ ind 64)) 't))))
 		)
-	)
+	;)
 )
 
 (defun getN (mat)
@@ -141,7 +149,7 @@
 
 (defun makeTurn (turn mat)
 	(cond
-		((turnSyntaxInvalid turn (getN mat) (getP mat) mat) '())
+		((turnInvalid turn (getN mat) (getP mat) mat) '())
 		(t 
 			(list 
 				(list (charToInd (car turn)) (cadr turn)) 
@@ -151,7 +159,7 @@
 	)
 )
 
-(defun turnSyntaxInvalid (turn n p mat)
+(defun turnInvalid (turn n p mat)
   (let ((rowF (charToInd (car turn)))
         (rowT (charToInd (caddr turn)))
         (colF (cadr turn))
