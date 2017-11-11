@@ -80,12 +80,9 @@
 )
 
 (defun charToInd (ch)
-	(let 
-	;	((abc '(A B C D E F G H I J K L M N O P Q R S T U V W X Y Z)))
+	(let
 		((chCode (char-code (coerce ch 'character))))
-		(cond 
-			;((not (member ch abc)) '())
-			;(t (1+ (position ch abc)))
+		(cond
 			((> chCode 90) '())
 			((< chCode 65) '())
 			(t (- chCode 64))
@@ -94,19 +91,12 @@
 )
 
 (defun indToChar (ind)
-	;(let
-	;	((abc '(A B C D E F G H I J K L M N O P Q R S T U V W X Y Z)))
-		(cond 
-			((< ind 0) '())
-			((= ind 0) '())
-			;((> ind (length abc)) '())
-			;(t (nth (1- ind) abc))
-			((> ind 26) '())
-			(t (car (list (intern (string (code-char (+ ind 64)))))))
-			;(t (coerce (code-char (+ ind 64)) 'symbol))
-			;(t (print (type-of (coerce (code-char (+ ind 64)) 't))))
-		)
-	;)
+	(cond 
+		((< ind 0) '())
+		((= ind 0) '())
+		((> ind 26) '())
+		(t (car (list (intern (string (code-char (+ ind 64)))))))
+	)
 )
 
 (defun getN (mat)
@@ -129,8 +119,8 @@
   (caddddadr (assoc 64 mat))
 )
 
-(defun setP(mat p)
- (append (list (cons 64 (list (cons (car(car (cdr (assoc 64 mat)))) (cons p (cdr (cdr (car (cdr (assoc 64 mat)))))))))) (cdr mat))
+(defun setP (mat p)
+ (append (list (cons 64 (list (cons (caadr (assoc 64 mat)) (cons p (cddadr (assoc 64 mat))))))) (cdr mat))
 )
 
 (defun promptForTurn (p err mat)
@@ -139,7 +129,7 @@
      ((not (null err)) (format t "~%Potez nije validan!"))
      (t (format t "~%~a je na potezu:" p))
      )
-    (let* ((turnList (list (read) (read) (read) (read))) (turn (makeTurn turnList mat)))
+    (let* ((turnList (readList (read-line)) (turn (makeTurn turnList mat)))
       (cond
        ((null turn) (promptForTurn p t mat))
        (t turn)
@@ -309,13 +299,11 @@
 
 (defun isWin (i j player mat n)
 (cond 
-      ((= (sumVertical i j player mat n 0) '5)  't)
-      ((= (sumDiagonal i j player mat n 0) '5)  't)
-       ('t '())
+    ((= (sumVertical i j player mat n 0) '5) 't)
+    ((= (sumDiagonal i j player mat n 0) '5) 't)
+	('t '())
 )
 )
-
-
 
 (defun notInOwnField (i player n)
 (cond 
@@ -326,4 +314,14 @@
                     ((< i (1- n)) 't)
                      ('t '())    ))
 )
+)
+
+(defun readList (mov)
+    (if (not (streamp mov))
+		(readList (make-string-input-stream mov))
+		(if (listen mov)
+			(cons (read mov) (readList mov))
+			'()
+		)
+	)
 )
