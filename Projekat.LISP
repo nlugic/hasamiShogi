@@ -128,10 +128,11 @@
 (defun getFinished (mat)
   (caddddadr (assoc 64 mat))
 )
+
 (defun setP(mat p)
  (append (list (cons 64 (list (cons (car(car (cdr (assoc 64 mat)))) (cons p (cdr (cdr (car (cdr (assoc 64 mat)))))))))) (cdr mat))
-
 )
+
 (defun promptForTurn (p err mat)
   (progn
     (cond
@@ -217,7 +218,24 @@
 	)
 )
 
+(defun isSandvicVertical (i j player1 player2 mat n direction)
+(cond 
+      ((= direction 0) (list (isSandvicVertical (1+ i) j player1 player2 mat n -1) (isSandvicVertical (1- i) j player1 player2 mat n '1) ) )
+      ((< direction 0) (cond ((= (getValue i j mat) player2)  (isSandvicVertical (1+ i) j player1 player2 mat n -1) )
+                             ( (= (getValue i j mat) player1)  i )
+                                    ('t '())
+                        )
+       )
+      ('t ( ) (cond ((= (getValue i j mat) player2)  (isSandvicVertical (1- i) j player1 player2 mat n '1) )
+                    ( (= (getValue i j mat) player1)  i )
+                    ('t '())
+                    )
+       )
+ )
 
+)
+
+(defun isSandvicHorisontal (i j player1 player2 mat n direction)
 (cond 
       ((= direction 0) (list (isSandvicHorisontal i (1+ j) player1 player2 mat n -1) (isSandvicHorisontal i (1- j) player1 player2 mat n '1) ) )
       ((< direction 0) (cond ((= (getValue i j mat) player2)  (isSandvicHorisontal i (1- j) player1 player2 mat n -1) )
@@ -234,8 +252,7 @@
 
 )
 
-
-(defun removeHorisontalEnemy(i startJ endJ j mat)
+(defun removeHorisontalEnemy (i startJ endJ j mat)
 (cond 
        ((null startJ) (removeHorisontalEnemy i j endJ j mat))
 	   ((null endJ) (removeHorisontalEnemy i startJ j j mat))
@@ -246,7 +263,7 @@
 
 )
 
-(defun removeVerticalEnemy(j startI endI i mat)
+(defun removeVerticalEnemy (j startI endI i mat)
 (cond 
        ((null startI) (removeVerticalEnemy j i endI i mat))
 	   ((null endI) (removeVerticalEnemy j startI i i mat))
@@ -257,10 +274,8 @@
 )
 
 
-(defun sandvic(i j player1 player2 mat n )
-
+(defun sandvic (i j player1 player2 mat n )
 (let ((x (isSandvicHorisontal i j player1 player2 mat n 0)) (y (isSandvicVertical i j player1 player2 mat n 0)))
-
 (cond 
        ((and (null (car x))(null (cadr x)) (null (car y))(null (cadr y)) ) mat)
        ((and (null (car x))(null (cadr x))) (removeVerticalEnemy j (car y) (cadr y) i mat))
@@ -270,4 +285,45 @@
  
   )
  )
+)
+
+(defun sumVertical (i j player mat n direction)
+(cond 
+      ((= direction 0) (+ (sumVertical (1+ i) j player mat n -1) (sumVertical (1- i) j player mat n '1) ) )
+      ((< direction 0) (cond ((and (= (getValue i j mat) player) (notInOwnField i  player n) ) (+ (sumVertical (1+ i) j player mat n -1) '1 ))
+                             ('t '0)    ))
+      ('t ( ) (cond ((and (= (getValue i j mat) player) (notInOwnField i  player n))(+ (sumVertical (1- i) j player mat n 1) '1 ))
+                             ('t '0) ))
+)
+)
+
+(defun sumDiagonal (i j player mat n direction)
+(cond 
+      ((= direction 0) (+ (sumVertical (1+ i) (1+ j) player mat n -1) (sumVertical (1- i) (1- j) player mat n '1) ) )
+      ((< direction 0) (cond ((and (= (getValue i j mat) player) (notInOwnField i  player n))(+ (sumVertical (1+ i) (1+ j) player mat n -1) '1 ))
+                             ('t '0)    ))
+      ('t ( ) (cond ((and (= (getValue i j mat) player) (notInOwnField i player n))(+ (sumVertical (1- i) (1- j) player mat n 1  ) '1 ))
+                             ('t '0) ))
+)
+)
+
+(defun isWin (i j player mat n)
+(cond 
+      ((= (sumVertical i j player mat n 0) '5)  't)
+      ((= (sumDiagonal i j player mat n 0) '5)  't)
+       ('t '())
+)
+)
+
+
+
+(defun notInOwnField (i player n)
+(cond 
+((= player 1) (cond
+                    ((> i 2) 't)
+                     ('t '())    ))
+((= player 2) (cond
+                    ((< i (1- n)) 't)
+                     ('t '())    ))
+)
 )
