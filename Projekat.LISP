@@ -35,7 +35,7 @@
 
 (defun gamePlay(mat)
   (showMatrix (getn mat) mat)
-  (let* ((Potez (promptForTurn (getp mat) '() mat)) (matrix (sandvic (car (car (cdr Potez))) (car (cdr (car (cdr Potez)))) (getp mat) (logxor (getp mat) 3) (playTurn mat Potez) '0)))
+  (let* ((Potez (promptForTurn (getp mat) '() mat)) (matrix (playTurn mat Potez)))
     (cond ((isWin (car (car (cdr Potez))) (car (cdr (car (cdr Potez)))) (getp matrix) matrix (getn matrix)) (write "you win")) 
           ('t (gamePlay (setp matrix (logxor (getp mat) 3 )))))
 ) 
@@ -84,12 +84,9 @@
 )
 
 (defun charToInd (ch)
-	(let 
-	;	((abc '(A B C D E F G H I J K L M N O P Q R S T U V W X Y Z)))
+	(let
 		((chCode (char-code (coerce ch 'character))))
-		(cond 
-			;((not (member ch abc)) '())
-			;(t (1+ (position ch abc)))
+		(cond
 			((> chCode 90) '())
 			((< chCode 65) '())
 			(t (- chCode 64))
@@ -98,19 +95,12 @@
 )
 
 (defun indToChar (ind)
-	;(let
-	;	((abc '(A B C D E F G H I J K L M N O P Q R S T U V W X Y Z)))
-		(cond 
-			((< ind 0) '())
-			((= ind 0) '())
-			;((> ind (length abc)) '())
-			;(t (nth (1- ind) abc))
-			((> ind 26) '())
-			(t (car (list (intern (string (code-char (+ ind 64)))))))
-			;(t (coerce (code-char (+ ind 64)) 'symbol))
-			;(t (print (type-of (coerce (code-char (+ ind 64)) 't))))
-		)
-	;)
+	(cond 
+		((< ind 0) '())
+		((= ind 0) '())
+		((> ind 26) '())
+		(t (car (list (intern (string (code-char (+ ind 64)))))))
+	)
 )
 
 (defun getN (mat)
@@ -133,8 +123,8 @@
   (caddddadr (assoc 64 mat))
 )
 
-(defun setP(mat p)
- (append (list (cons 64 (list (cons (car(car (cdr (assoc 64 mat)))) (cons p (cdr (cdr (car (cdr (assoc 64 mat)))))))))) (cdr mat))
+(defun setP (mat p)
+ (append (list (cons 64 (list (cons (caadr (assoc 64 mat)) (cons p (cddadr (assoc 64 mat))))))) (cdr mat))
 )
 
 (defun promptForTurn (p err mat)
@@ -143,47 +133,104 @@
      ((not (null err)) (format t "~%Potez nije validan!"))
      (t (format t "~%~a je na potezu:" p))
      )
-    (let* ((turnList (list (read) (read) (read) (read))) (turn (makeTurn turnList mat)))
+    (let* ((turnList (readList (read-line))) (turnStruct (makeTurn turnList mat)))
       (cond
-       ((null turn) (promptForTurn p t mat))
-       (t turn)
+       ((null turnStruct) (promptForTurn p t mat))
+       (t turnStruct)
        )
-      )
     )
+)
 )
 
 (defun makeTurn (turn mat)
 	(cond
 		((turnInvalid turn (getN mat) (getP mat) mat) '())
-		(t 
-			(list 
-				(list (charToInd (car turn)) (cadr turn)) 
-				(list (charToInd (caddr turn)) (cadddr turn))
+		(t (makeTurnStruct turn))
+	)
+)
+
+(defun makeTurnStruct (turn)
+	(list 
+		(list (charToInd (car turn)) (cadr turn)) 
+		(list (charToInd (caddr turn)) (cadddr turn))
+	)
+)
+
+(defun turnInvalid (turn n p mat)
+  (let* ((turnStruct (makeTurnStruct turn))
+		(rowF (car turnStruct))
+        (rowT (caddr turnStruct))
+        (colF (cadr turnStruct))
+        (colT (cadddr turnStruct)))
+    (cond
+     ((< (length turnStruct) 4) t)
+     ((equal (equal colF colT) (equal rowF rowT)) t)
+     ((or (> colF n) (< colF 1)) t)
+     ((or (> rowF n) (< rowF 1)) t)
+     ((or (> colT n) (< colT 1)) t)
+     ((or (> rowT n) (< rowT 1)) t)
+     ((not (= (getValue rowF colF mat) p)) t)
+     ((> (getValue rowT colT mat) 0) t)
+	 ((turnBlocked turnStruct p mat) t)
+	 (t '())
+     )
+    )
+)
+
+(defun turnBlocked (turnStruct p mat)
+	(let*
+		((offset (turnOffset turnStruct)) (offsetH (cadr offset)) (offsetV (car offset)))
+		(cond
+			((not (= offsetH 0)) (horizontalTurnBlocked (signum offsetH) offsetH turnStruct p mat))
+			(t (verticalTurnBlocked (signum offsetV) offsetV turnStruct p mat))
+		)
+	)
+)
+
+(defun horizontalTurnBlocked (currMove offset turnStruct p mat)
+	(let
+		((x (caar turnStruct)) (y (+ (cadar turnStruct) currMove)))
+		(cond
+			((= (- (abs currMove) (abs offset)) 1)  '())
+			((and (= (abs offset) 2) (= (getValue x y mat) (logxor p 3)))
+				(if (< currMove 0)
+					(horizontalTurnBlocked (1- currMove) offset turnStruct p mat)
+					(horizontalTurnBlocked (1+ currMove) offset turnStruct p mat)
+				)
+			)
+			((> (getValue x y mat) 0) t)
+			(t 	(if (< currMove 0)
+					(horizontalTurnBlocked (1- currMove) offset turnStruct p mat)
+					(horizontalTurnBlocked (1+ currMove) offset turnStruct p mat)
+				)
 			)
 		)
 	)
 )
 
-(defun turnInvalid (turn n p mat)
-  (let ((rowF (charToInd (car turn)))
-        (rowT (charToInd (caddr turn)))
-        (colF (cadr turn))
-        (colT (cadddr turn)))
-    (cond
-     ((< (length turn) 4) t)
-     ((equal (equal colF colT) (equal rowF rowT)) t)
-     ((> colF n) t)
-     ((< colF 1) t)
-     ((> rowF n) t)
-     ((< rowF 1) t)
-     ((> colT n) t)
-     ((< colT 1) t)
-     ((> rowT n) t)
-     ((< rowT 1) t)
-     ((not (= (getValue rowF colF mat) p)) t)
-     ((> (getValue rowT colT mat) 0) t)
-     )
-    )
+(defun verticalTurnBlocked (currMove offset turnStruct p mat)
+	(let
+		((x (+ (caar turnStruct) currMove)) (y (cadar turnStruct)))
+		(cond
+			((= (- (abs currMove) (abs offset)) 1) '())
+			((and (= (abs offset) 2) (= (getValue x y mat) (logxor p 3)))
+				(if (< currMove 0)
+					(verticalTurnBlocked (1- currMove) offset turnStruct p mat)
+					(verticalTurnBlocked (1+ currMove) offset turnStruct p mat)
+				)
+			)
+			((> (getValue x y mat) 0) t)
+			(t 	(if (< currMove 0)
+					(verticalTurnBlocked (1- currMove) offset turnStruct p mat)
+					(verticalTurnBlocked (1+ currMove) offset turnStruct p mat)
+				)
+			)
+		)
+	)
+)
+
+(defun turnOffset (turnStruct)
+	(list (- (caadr turnStruct) (caar turnStruct)) (- (cadadr turnStruct) (cadar turnStruct)))
 )
 
 (defun getValue (i j mat)
@@ -224,14 +271,14 @@
 
 (defun isSandvicVertical (i j player1 player2 mat n direction)
 (cond 
-      ((= direction 0) (list (isSandvicVertical (1- i) j player1 player2 mat n '1) (isSandvicVertical (1+ i) j player1 player2 mat n -1)  ) )
-      ((< direction 0) (cond ((equal (getValue i j mat) player2)  (isSandvicVertical (1+ i) j player1 player2 mat n -1) )
-                             ( (equal (getValue i j mat) player1)  i )
+      ((= direction 0) (list (isSandvicVertical (1+ i) j player1 player2 mat n -1) (isSandvicVertical (1- i) j player1 player2 mat n '1) ) )
+      ((< direction 0) (cond ((= (getValue i j mat) player2)  (isSandvicVertical (1+ i) j player1 player2 mat n -1) )
+                             ( (= (getValue i j mat) player1)  i )
                                     ('t '())
                         )
        )
-      ('t ( ) (cond ((equal (getValue i j mat) player2)  (isSandvicVertical (1- i) j player1 player2 mat n '1) )
-                    ( (equal (getValue i j mat) player1)  i )
+      ('t ( ) (cond ((= (getValue i j mat) player2)  (isSandvicVertical (1- i) j player1 player2 mat n '1) )
+                    ( (= (getValue i j mat) player1)  i )
                     ('t '())
                     )
        )
@@ -241,14 +288,14 @@
 
 (defun isSandvicHorisontal (i j player1 player2 mat n direction)
 (cond 
-      ((= direction 0) (list (isSandvicHorisontal i (1- j) player1 player2 mat n '1) (isSandvicHorisontal i (1+ j) player1 player2 mat n -1)  ) )
-      ((< direction 0) (cond ((equal (getValue i j mat) player2)  (isSandvicHorisontal i (1+ j) player1 player2 mat n -1) )
-                             ( (equal (getValue i j mat) player1)  j )
+      ((= direction 0) (list (isSandvicHorisontal i (1+ j) player1 player2 mat n -1) (isSandvicHorisontal i (1- j) player1 player2 mat n '1) ) )
+      ((< direction 0) (cond ((= (getValue i j mat) player2)  (isSandvicHorisontal i (1- j) player1 player2 mat n -1) )
+                             ( (= (getValue i j mat) player1)  i )
                                     ('t '())
                         )
        )
-      ('t ( ) (cond ((equal (getValue i j mat) player2)  (isSandvicHorisontal i (1- j) player1 player2 mat n '1) )
-                    ( (equal (getValue i j mat) player1)  j )
+      ('t ( ) (cond ((= (getValue i j mat) player2)  (isSandvicHorisontal i (1+ j) player1 player2 mat n '1) )
+                    ( (= (getValue i j mat) player1)  i )
                     ('t '())
                     )
        )
@@ -258,9 +305,9 @@
 
 (defun removeHorisontalEnemy (i startJ endJ j mat)
 (cond 
-       ((null startJ) (removeHorisontalEnemy i j endJ j mat ))
-	   ((null endJ) (removeHorisontalEnemy i startJ j j mat ))
-	   ((equal startJ j) (removeHorisontalEnemy i (1+ startJ) endJ j mat )) 
+       ((null startJ) (removeHorisontalEnemy i j endJ j mat))
+	   ((null endJ) (removeHorisontalEnemy i startJ j j mat))
+	   ((equal startJ j) (removeHorisontalEnemy i (1+ startJ) endJ j mat)) 
 	   ((< startJ endJ) (removeHorisontalEnemy i (1+ startJ) endJ j (setFigure (list i startJ) '0 mat)))
 	   ('t mat)
  )
@@ -269,10 +316,10 @@
 
 (defun removeVerticalEnemy (j startI endI i mat)
 (cond 
-       ((null startI) (removeVerticalEnemy j i endI i mat ))
-	   ((null endI) (removeVerticalEnemy j startI i i mat ))
-	   ((equal startI i) (removeVerticalEnemy j (1+ startI) endI i mat )) 
-	   ((< startI endI) (removeVerticalEnemy j (1+ startI) endI i (setFigure (list startI j) '0 mat )))
+       ((null startI) (removeVerticalEnemy j i endI i mat))
+	   ((null endI) (removeVerticalEnemy j startI i i mat))
+	   ((equal startI i) (removeVerticalEnemy j (1+ startI) endI i mat)) 
+	   ((< startI endI) (removeHorisontalEnemy j (1+ startI) endI i (setFigure (list startI j) '0 mat)))
 	   ('t mat)
  )
 )
@@ -282,19 +329,14 @@
 (let ((x (isSandvicHorisontal i j player1 player2 mat n 0)) (y (isSandvicVertical i j player1 player2 mat n 0)))
 (cond 
        ((and (null (car x))(null (cadr x)) (null (car y))(null (cadr y)) ) mat)
-       ((and (null (car x))(null (cadr x))) (removeVerticalEnemy j (ifNullSetPoint (car y)) (cadr y) i mat))
-	   ((and (null (car y))(null (cadr y))) (removeHorisontalEnemy i (ifNullSetPoint (car x)) (cadr x) j mat))
-	   ('t (removeVerticalEnemy j (ifNullSetPoint (car y)) (cadr y) i (removeHorisontalEnemy i (ifNullSetPoint(car x)) (cadr x) j mat)))
+       ((and (null (car x))(null (cadr x))) (removeVerticalEnemy j (car y) (cadr y) i mat))
+	   ((and (null (car y))(null (cadr y))) (removeHorisontalEnemy i (car x) (cadr x) j mat))
+	   ('t (removeVerticalEnemy j (car y) (cadr y) i (removeHorisontalEnemy i (car x) (cadr x) j mat)))
 
  
   )
  )
 )
-(defun ifNullSetPoint(x)
-  (cond ((null x)  x)
-        ('t (+ x 1))
-))
-
 
 (defun sumVertical (i j player mat n direction)
 (cond 
@@ -306,36 +348,23 @@
 )
 )
 
-(defun sumDiagonalRight (i j player mat n direction)
+(defun sumDiagonal (i j player mat n direction)
 (cond 
-      ((= direction 0) (+ 1 (sumDiagonalRight (1+ i) (1+ j) player mat n -1) (sumDiagonalRight (1- i) (1- j) player mat n '1) ) )
-      ((< direction 0) (cond ((and (equal (getValue i j mat) player) (notInOwnField i  player n))(+ (sumDiagonalRight (1+ i) (1+ j) player mat n -1) '1 ))
+      ((= direction 0) (+ 1 (sumDiagonal (1+ i) (1+ j) player mat n -1) (sumDiagonal (1- i) (1- j) player mat n '1) ) )
+      ((< direction 0) (cond ((and (equal (getValue i j mat) player) (notInOwnField i  player n))(+ (sumDiagonal (1+ i) (1+ j) player mat n -1) '1 ))
                              ('t '0)    ))
-      ('t ( ) (cond ((and (equal (getValue i j mat) player) (notInOwnField i player n))(+ (sumDiagonalRight (1- i) (1- j) player mat n 1  ) '1 ))
-                             ('t '0) ))
-)
-)
-
-(defun sumDiagonalLeft (i j player mat n direction)
-(cond 
-      ((= direction 0) (+ 1 (sumDiagonalLeft (1+ i) (1- j) player mat n -1) (sumDiagonalLeft (1+ i) (1- j) player mat n '1) ) )
-      ((< direction 0) (cond ((and (equal (getValue i j mat) player) (notInOwnField i  player n))(+ (sumDiagonalLeft (1+ i) (1- j) player mat n -1) '1 ))
-                             ('t '0)    ))
-      ('t ( ) (cond ((and (equal (getValue i j mat) player) (notInOwnField i player n))(+ (sumDiagonalLeft (1+ i) (1- j) player mat n 1  ) '1 ))
+      ('t ( ) (cond ((and (equal (getValue i j mat) player) (notInOwnField i player n))(+ (sumDiagonal (1- i) (1- j) player mat n 1  ) '1 ))
                              ('t '0) ))
 )
 )
 
 (defun isWin (i j player mat n)
 (cond 
-      ((equal (sumVertical i j player mat n 0) '5)  't)
-      ((equal (sumDiagonalRight i j player mat n 0) '5)  't)
-      ((equal (sumDiagonalLeft i j player mat n 0) '5)  't)
-       ('t '())
+    ((> (sumVertical i j player mat n 0) '4) 't)
+    ((> (sumDiagonal i j player mat n 0) '4) 't)
+	('t '())
 )
 )
-
-
 
 (defun notInOwnField (i player n)
 (cond 
@@ -346,4 +375,14 @@
                     ((< i (1- n)) 't)
                      ('t '())    ))
 )
+)
+
+(defun readList (mov)
+    (if (not (streamp mov))
+		(readList (make-string-input-stream mov))
+		(if (listen mov)
+			(cons (read mov) (readList mov))
+			'()
+		)
+	)
 )
