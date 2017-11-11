@@ -35,12 +35,16 @@
 
 (defun gamePlay(mat)
   (showMatrix (getn mat) mat)
-  (gamePlay (setp (playTurn mat (promptForTurn (getp mat) '() mat)) (logxor (getp mat) 3 )))
-  
+  (let* ((Potez (promptForTurn (getp mat) '() mat)) (matrix (playTurn mat Potez)))
+    (cond ((isWin (car (car (cdr Potez))) (car (cdr (car (cdr Potez)))) (getp matrix) matrix (getn matrix)) (write "you win")) 
+          ('t (gamePlay (setp matrix (logxor (getp mat) 3 )))))
+) 
 )
+
 (defun playTurn(mat turn)
 (setFigure (car (cdr turn)) (getP mat) (unsetFigure (car turn) mat))
 )
+
 (defun wrapMatrix(p brX brO n mat)
   (append (list (cons 64 (list (cons n (cons p (cons brX (cons brO (cons '0 '())))))))) mat)
  
@@ -279,20 +283,20 @@
 
 (defun sumVertical (i j player mat n direction)
 (cond 
-      ((= direction 0) (+ (sumVertical (1+ i) j player mat n -1) (sumVertical (1- i) j player mat n '1) ) )
-      ((< direction 0) (cond ((and (= (getValue i j mat) player) (notInOwnField i  player n) ) (+ (sumVertical (1+ i) j player mat n -1) '1 ))
+      ((= direction 0) (+ 1 (sumVertical (1+ i) j player mat n -1) (sumVertical (1- i) j player mat n '1) ) )
+      ((< direction 0) (cond ((and (equal (getValue i j mat) player) (notInOwnField i  player n) ) (+ (sumVertical (1+ i) j player mat n -1) '1 ))
                              ('t '0)    ))
-      ('t ( ) (cond ((and (= (getValue i j mat) player) (notInOwnField i  player n))(+ (sumVertical (1- i) j player mat n 1) '1 ))
+      ('t ( ) (cond ((and (equal (getValue i j mat) player) (notInOwnField i  player n))(+ (sumVertical (1- i) j player mat n 1) '1 ))
                              ('t '0) ))
 )
 )
 
 (defun sumDiagonal (i j player mat n direction)
 (cond 
-      ((= direction 0) (+ (sumVertical (1+ i) (1+ j) player mat n -1) (sumVertical (1- i) (1- j) player mat n '1) ) )
-      ((< direction 0) (cond ((and (= (getValue i j mat) player) (notInOwnField i  player n))(+ (sumVertical (1+ i) (1+ j) player mat n -1) '1 ))
+      ((= direction 0) (+ 1 (sumDiagonal (1+ i) (1+ j) player mat n -1) (sumDiagonal (1- i) (1- j) player mat n '1) ) )
+      ((< direction 0) (cond ((and (equal (getValue i j mat) player) (notInOwnField i  player n))(+ (sumDiagonal (1+ i) (1+ j) player mat n -1) '1 ))
                              ('t '0)    ))
-      ('t ( ) (cond ((and (= (getValue i j mat) player) (notInOwnField i player n))(+ (sumVertical (1- i) (1- j) player mat n 1  ) '1 ))
+      ('t ( ) (cond ((and (equal (getValue i j mat) player) (notInOwnField i player n))(+ (sumDiagonal (1- i) (1- j) player mat n 1  ) '1 ))
                              ('t '0) ))
 )
 )
