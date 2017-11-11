@@ -209,3 +209,57 @@
 	)
 )
 
+
+(cond 
+      ((= direction 0) (list (isSandvicHorisontal i (1+ j) player1 player2 mat n -1) (isSandvicHorisontal i (1- j) player1 player2 mat n '1) ) )
+      ((< direction 0) (cond ((= (getValue i j mat) player2)  (isSandvicHorisontal i (1- j) player1 player2 mat n -1) )
+                             ( (= (getValue i j mat) player1)  i )
+                                    ('t '())
+                        )
+       )
+      ('t ( ) (cond ((= (getValue i j mat) player2)  (isSandvicHorisontal i (1+ j) player1 player2 mat n '1) )
+                    ( (= (getValue i j mat) player1)  i )
+                    ('t '())
+                    )
+       )
+ )
+
+)
+
+
+(defun removeHorisontalEnemy(i startJ endJ j mat)
+(cond 
+       ((null startJ) (removeHorisontalEnemy i j endJ j mat))
+	   ((null endJ) (removeHorisontalEnemy i startJ j j mat))
+	   ((equal startJ j) (removeHorisontalEnemy i (1+ startJ) endJ j mat)) 
+	   ((< startJ endJ) (removeHorisontalEnemy i (1+ startJ) endJ j (setFigure (list i startJ) '0 mat)))
+	   ('t mat)
+ )
+
+)
+
+(defun removeVerticalEnemy(j startI endI i mat)
+(cond 
+       ((null startI) (removeVerticalEnemy j i endI i mat))
+	   ((null endI) (removeVerticalEnemy j startI i i mat))
+	   ((equal startI i) (removeVerticalEnemy j (1+ startI) endI i mat)) 
+	   ((< startI endI) (removeHorisontalEnemy j (1+ startI) endI i (setFigure (list startI j) '0 mat)))
+	   ('t mat)
+ )
+)
+
+
+(defun sandvic(i j player1 player2 mat n )
+
+(let ((x (isSandvicHorisontal i j player1 player2 mat n 0)) (y (isSandvicVertical i j player1 player2 mat n 0)))
+
+(cond 
+       ((and (null (car x))(null (cadr x)) (null (car y))(null (cadr y)) ) mat)
+       ((and (null (car x))(null (cadr x))) (removeVerticalEnemy j (car y) (cadr y) i mat))
+	   ((and (null (car y))(null (cadr y))) (removeHorisontalEnemy i (car x) (cadr x) j mat))
+	   ('t (removeVerticalEnemy j (car y) (cadr y) i (removeHorisontalEnemy i (car x) (cadr x) j mat)))
+
+ 
+  )
+ )
+)
