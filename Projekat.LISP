@@ -79,7 +79,7 @@
 	)
 )
 
-(defun showMatrix (n li)
+(defun showMatrix (n mat)
 	(dotimes (g (1+ n))
 		(cond
 			((= g 0) (format t "  "))
@@ -93,7 +93,7 @@
 				(print (indToChar i))
 				(dotimes (j (1+ n))
 					(cond
-						((> j 0) (format t "|~a|" (getLetter (getValue i j li))))
+						((> j 0) (format t "|~a|" (getLetter (getValue i j mat))))
 						('t '" ")
 					)
 				)
@@ -188,13 +188,14 @@
 	(let*
 		(
 			(turnStruct (makeTurnStruct turn))
-			(rowF (car turnStruct))
-			(rowT (caddr turnStruct))
-			(colF (cadr turnStruct))
-			(colT (cadddr turnStruct))
+			(rowF (caar turnStruct))
+			(rowT (caadr turnStruct))
+			(colF (cadar turnStruct))
+			(colT (cadadr turnStruct))
 		)
 		(cond
-			((< (length turnStruct) 4) t)
+			((< (length (car turnStruct)) 2) t)
+			((< (length (cadr turnStruct)) 2) t)
 			((equal (equal colF colT) (equal rowF rowT)) t)
 			((or (> colF n) (< colF 1)) t)
 			((or (> rowF n) (< rowF 1)) t)
