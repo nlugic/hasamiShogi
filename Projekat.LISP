@@ -159,22 +159,37 @@
 
 ;braca broj figura igraca X
 (defun getNX (mat)
-	(caddadr (assoc 64 mat))
+	(caddr (cadr (assoc 64 mat)))
 )
 
 ;vraca broj figura igraca O
 (defun getNO (mat)
-	(cadddadr (assoc 64 mat))
+	(caddr (cdadr (assoc 64 mat)))
 )
 
 ;vraca da li je igra gotova
 (defun getFinished (mat)
-	(caddddadr (assoc 64 mat))
+	(caddddr (cadr (assoc 64 mat)))
 )
 
 ;postavlja novog igraca koji je na potezu, prakticno radi wrapMatrix sa novom vrednoscu
 (defun setP (mat p)
 	(append (list (cons 64 (list (cons (caadr (assoc 64 mat)) (cons p (cddadr (assoc 64 mat))))))) (cdr mat))
+)
+
+(defun setNX(mat newNX)
+  (append (list (cons 64 (list (append (list (car (car (cdr (assoc 64 mat)))) (car (cdr (car (cdr (assoc 64 mat))))))(cons newNX (cdr (cdr (cdr (car (cdr (assoc 64 mat))))))))))) (cdr mat))
+)
+
+(defun setNO(mat newNO)
+  (append (list (cons 64 (list (append (list (car (car (cdr (assoc 64 mat)))) (car (cdr (car (cdr (assoc 64 mat))))) (car (cdr (cdr (car (cdr (assoc 64 mat)))))))(cons newNO (cdr(cdr (cdr (cdr (car (cdr (assoc 64 mat)))))))))))) (cdr mat))
+)
+
+(defun decrementNewCountForFigures(mat p)
+  (cond 
+   ((= p 1) (setNX mat (- (getNX mat) 1)))
+   ('t (setNO mat (- (getNO mat) 1)))
+   )
 )
 
 ;ucitava potez oblika '<polazna vrsta> <polazna kolona> <dolazna vrsta> <dolazna kolona>' od korisnika
@@ -385,24 +400,24 @@
 
 ;brise protivnicke figure izmedju pozicija (i, startJ) i (i, endJ), j je kolona igraca koji pravi sendvic
 ;brise po horizontali, radi na osnovu rezultata funkcije isSandwichHorizontal
-(defun removeHorizontalEnemy (i startJ endJ j mat)
+(defun removeHorizontalEnemy (i startJ endJ j mat p)
 	(cond
-		((null startJ) (removeHorizontalEnemy i j endJ j mat))
-		((null endJ) (removeHorizontalEnemy i startJ j j mat))
-		((equal startJ j) (removeHorizontalEnemy i (1+ startJ) endJ j mat)) 
-		((< startJ endJ) (removeHorizontalEnemy i (1+ startJ) endJ j (setFigure (list i startJ) '0 mat)))
+		((null startJ) (removeHorizontalEnemy i j endJ j mat p))
+		((null endJ) (removeHorizontalEnemy i startJ j j mat p))
+		((equal startJ j) (removeHorizontalEnemy i (1+ startJ) endJ j mat p)) 
+		((< startJ endJ) (removeHorizontalEnemy i (1+ startJ) endJ j (setFigure (list i startJ) '0 (decrementNewCountForFigures mat p))p))
 		('t mat)
 	)
 )
 
 ;brise protivnicke figure izmedju pozicija (startI, j) i (endI, j), i je vrsta igraca koji pravi sendvic
 ;brise po vertikali, radi na osnovu rezultata funkcije isSandwichVertical
-(defun removeVerticalEnemy (j startI endI i mat)
+(defun removeVerticalEnemy (j startI endI i mat p)
 	(cond 
-		((null startI) (removeVerticalEnemy j i endI i mat))
-		((null endI) (removeVerticalEnemy j startI i i mat))
-		((equal startI i) (removeVerticalEnemy j (1+ startI) endI i mat)) 
-		((< startI endI) (removeVerticalEnemy j (1+ startI) endI i (setFigure (list startI j) '0 mat)))
+		((null startI) (removeVerticalEnemy j i endI i mat p))
+		((null endI) (removeVerticalEnemy j startI i i mat p))
+		((equal startI i) (removeVerticalEnemy j (1+ startI) endI i mat p)) 
+		((< startI endI) (removeVerticalEnemy j (1+ startI) endI i (setFigure (list startI j) '0 (decrementNewCountForFigures mat p))p))
 		('t mat)
 	)
 )
@@ -417,9 +432,9 @@
 		)
 		(cond 
 			((and (null (car x)) (null (cadr x)) (null (car y)) (null (cadr y))) mat)
-			((and (null (car x)) (null (cadr x))) (removeVerticalEnemy j (ifNullSetPoint (car y)) (cadr y) i mat))
-			((and (null (car y)) (null (cadr y))) (removeHorizontalEnemy i (ifNullSetPoint (car x)) (cadr x) j mat))
-			('t (removeVerticalEnemy j (ifNullSetPoint (car y)) (cadr y) i (removeHorizontalEnemy i (ifNullSetPoint (car x)) (cadr x) j mat)))
+			((and (null (car x)) (null (cadr x))) (removeVerticalEnemy j (ifNullSetPoint (car y)) (cadr y) i mat player2))
+			((and (null (car y)) (null (cadr y))) (removeHorizontalEnemy i (ifNullSetPoint (car x)) (cadr x) j mat player2))
+			('t (removeVerticalEnemy j (ifNullSetPoint (car y)) (cadr y) i (removeHorizontalEnemy i (ifNullSetPoint (car x)) (cadr x) j mat player2) player2))
 		)
 	)
 )
