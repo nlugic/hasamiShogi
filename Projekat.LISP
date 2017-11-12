@@ -177,19 +177,22 @@
 	(append (list (cons 64 (list (cons (caadr (assoc 64 mat)) (cons p (cddadr (assoc 64 mat))))))) (cdr mat))
 )
 
-(defun setNX(mat newNX)
-  (append (list (cons 64 (list (append (list (car (car (cdr (assoc 64 mat)))) (car (cdr (car (cdr (assoc 64 mat))))))(cons newNX (cdr (cdr (cdr (car (cdr (assoc 64 mat))))))))))) (cdr mat))
+;postavlja novi broj figura igraca X, slicno kao funkcija setP
+(defun setNX (mat newNX)
+	(append (list (cons 64 (list (append (list (caadr (assoc 64 mat)) (cadadr (assoc 64 mat)))(cons newNX (cdr (cddadr (assoc 64 mat)))))))) (cdr mat))
 )
 
-(defun setNO(mat newNO)
-  (append (list (cons 64 (list (append (list (car (car (cdr (assoc 64 mat)))) (car (cdr (car (cdr (assoc 64 mat))))) (car (cdr (cdr (car (cdr (assoc 64 mat)))))))(cons newNO (cdr(cdr (cdr (cdr (car (cdr (assoc 64 mat)))))))))))) (cdr mat))
+;postavlja novi brjo figura igraca O, slicno kao funkcije setP i setNX
+(defun setNO (mat newNO)
+	(append (list (cons 64 (list (append (list (caadr (assoc 64 mat)) (cadadr (assoc 64 mat)) (car (cddadr (assoc 64 mat)))) (cons newNO (cddr (cddadr (assoc 64 mat)))))))) (cdr mat))
 )
 
-(defun decrementNewCountForFigures(mat p)
-  (cond 
-   ((= p 1) (setNX mat (- (getNX mat) 1)))
-   ('t (setNO mat (- (getNO mat) 1)))
-   )
+;dekrementira broj figura igraca p, koristi se prilikom brisanja horizontalnog/vertikalnog niza figura pri pravljenju sendvica
+(defun setNewFigureCount (mat p)
+	(cond 
+		((= p 1) (setNX mat (1- (getNX mat))))
+		('t (setNO mat (1- (getNO mat))))
+	)
 )
 
 ;ucitava potez oblika '<polazna vrsta> <polazna kolona> <dolazna vrsta> <dolazna kolona>' od korisnika
@@ -405,7 +408,7 @@
 		((null startJ) (removeHorizontalEnemy i j endJ j mat p))
 		((null endJ) (removeHorizontalEnemy i startJ j j mat p))
 		((equal startJ j) (removeHorizontalEnemy i (1+ startJ) endJ j mat p)) 
-		((< startJ endJ) (removeHorizontalEnemy i (1+ startJ) endJ j (setFigure (list i startJ) '0 (decrementNewCountForFigures mat p))p))
+		((< startJ endJ) (removeHorizontalEnemy i (1+ startJ) endJ j (setFigure (list i startJ) '0 (setNewFigureCount mat p)) p))
 		('t mat)
 	)
 )
@@ -417,7 +420,7 @@
 		((null startI) (removeVerticalEnemy j i endI i mat p))
 		((null endI) (removeVerticalEnemy j startI i i mat p))
 		((equal startI i) (removeVerticalEnemy j (1+ startI) endI i mat p)) 
-		((< startI endI) (removeVerticalEnemy j (1+ startI) endI i (setFigure (list startI j) '0 (decrementNewCountForFigures mat p))p))
+		((< startI endI) (removeVerticalEnemy j (1+ startI) endI i (setFigure (list startI j) '0 (setNewFigureCount mat p)) p))
 		('t mat)
 	)
 )
