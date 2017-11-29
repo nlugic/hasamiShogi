@@ -167,11 +167,6 @@
 	(caddr (cdadr (assoc 64 mat)))
 )
 
-;vraca da li je igra gotova
-(defun getFinished (mat)
-	(caddddr (cadr (assoc 64 mat)))
-)
-
 ;postavlja novog igraca koji je na potezu, prakticno radi wrapMatrix sa novom vrednoscu
 (defun setP (mat p)
 	(append (list (cons 64 (list (cons (caadr (assoc 64 mat)) (cons p (cddadr (assoc 64 mat))))))) (cdr mat))
@@ -555,6 +550,14 @@
 	)
 )
 
+(defun removeNulls (lista)
+	(cond
+		((null lista) '())
+		((null (car lista)) (removeNulls (cdr lista)))
+		('t (cons (car lista) (removeNulls (cdr lista))))
+	)
+)
+
 (defun getMoveList (mat p)
 	(let
 		((positions (getAllFigurePositions mat p '())))
@@ -569,19 +572,56 @@
 	)
 )
 
-
 (defun getMovesFromPosition (pot player mat)
-	(append (verticalMoves pot pot player mat 0) (horizontalMoves pot pot player mat 0))
+	(append (jumpMoves pot pot player mat 0 0) (verticalMoves pot pot player mat 0) (horizontalMoves pot pot player mat 0))
+)
+
+(defun jumpMoves (pot prev player mat i dir)
+	(cond 
+        ((= i 0)
+			(removeNulls
+				(list
+					(jumpMoves (list (car pot) (1+ (cadr pot))) prev player mat 1 0)
+					(jumpMoves (list (car pot) (1- (cadr pot))) prev player mat 1 1)
+					(jumpMoves (list (1+ (car pot)) (cadr pot)) prev player mat 1 2)
+					(jumpMoves (list (1- (car pot)) (cadr pot)) prev player mat 1 3)
+				)
+			)
+		)
+		((= i 1) 
+			(cond 
+				(
+					(not (or (equal (getValue (car pot) (cadr pot) mat) 0) (equal (getValue (car pot) (cadr pot) mat) player)))
+					(cond
+						((= dir 0) (jumpMoves (list (car pot) (1+ (cadr pot))) prev player mat 2 0))
+						((= dir 1) (jumpMoves (list (car pot) (1- (cadr pot))) prev player mat 2 1))
+						((= dir 2) (jumpMoves (list (1+ (car pot)) (cadr pot)) prev player mat 2 2))
+						((= dir 3) (jumpMoves (list (1- (car pot)) (cadr pot)) prev player mat 2 3))
+                    )
+				)
+			)
+		)
+		((= i 2)
+			(cond
+				((equal (getValue (car pot) (cadr pot) mat) 0) (list prev pot))
+				('t '())
+			)
+		)
+	)
 )
 
 (defun horizontalMoves (pot prev player mat direction)
 	(cond 
-		((= direction 0) (append (horizontalMoves (list (car pot) (1- (cadr pot))) prev player  mat 1) (horizontalMoves (list (car pot) (1+ (cadr pot))) prev player mat -1)))
+		((= direction 0)
+			(append
+				(horizontalMoves (list (car pot) (1- (cadr pot))) prev player mat 1)
+				(horizontalMoves (list (car pot) (1+ (cadr pot))) prev player mat -1)
+			)
+		)
 		((< direction 0)
 			(cond
 				((not (equal (getValue (car pot) (cadr pot) mat) 0)) '())
 				('t (cons (list prev pot) (horizontalMoves (list (car pot) (1+ (cadr pot))) prev player  mat -1)))
-				
 			)
 		)
 		('t
@@ -611,14 +651,16 @@
 	)
 )
 
-(defun getAllFigurePositions(mat p i)
-  (cond ((< (getN mat) i) ())
-        ('t (cons (getAllFigurePositions mat p (1+ i)) (getAllFigurePositionsV mat (car (cdr (assoc i mat))) p i '0)))
-))
-
-(defun getAllFigurePositionsV(mat col p i j)
-  (cond ((< (getN mat) j) ())
-        ((equal (getValue i j mat) p) (cons (list i j) (getAllFigurePositionsV mat col p i (1+ j))))
-        ('t (getAllFigurePositionsV mat col p i (1+ j)))
+(defun getAllFigurePositions (mat p i)
+	(cond
+		((< (getN mat) i) '())
+		('t (append (getAllFigurePositions mat p (1+ i)) (getAllFigurePositionsV mat (car (cdr (assoc i mat))) p i 0)))
+	)
 )
+
+(defun getAllFigurePositionsV (mat col p i j)
+	(cond ((< (getN mat) j) '())
+		((equal (getValue i j mat) p) (cons (list i j) (getAllFigurePositionsV mat col p i (1+ j))))
+		('t (getAllFigurePositionsV mat col p i (1+ j)))
+	)
 )
