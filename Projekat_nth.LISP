@@ -1,11 +1,11 @@
 
 ;ovom funkcijom se pocinje igra, zove funkcije za unos parametara igre - velicina table i ko prvi igra
-(defun startGame ()
+(defun startGame () ;nema promena
 	(game (startGameInternNRead '()) (startGameInternPRead '()))
 )
 
 ;ucitava velicinu table od korisnika, err je 't ako unos nije validan
-(defun startGameInternNRead (err)
+(defun startGameInternNRead (err) ;nema promena
 	(progn 
 		(cond
 			((not (null err)) (format t "~%Pogresno ste uneli velicinu table: "))
@@ -22,7 +22,7 @@
 )
 
 ;ucitava broj igraca koji je prvi na potezu, err ima istu ulogu kao i u funkciji startGameInternNRead
-(defun startGameInternPRead (err)
+(defun startGameInternPRead (err) ;nema promena
 	(progn 
 		(cond
 			((not (null err)) (format t "~%Pogresno ste uneli prvog igraca (1 X) (2 O): "))
@@ -39,13 +39,13 @@
 )
 
 ;inicijalizuje tablu sa pratecim podacima i pokrece igru
-(defun game (n p)
+(defun game (n p) ;nema promena
 	(gamePlay (wrapMatrix p (* n 2) (* n 2) n (initMatrix 1 n)))
 )
 
 ;game loop koji u svakom potezu ispituje win condition, da li je doslo do sendvica
 ;takodje pita korisnika koji je na potezu koji je novi potez i po unosu ga igra
-(defun gamePlay (mat)
+(defun gamePlay (mat) ;nema promena
 	(showMatrix (getN mat) mat)
 	(let*
 		(
@@ -62,33 +62,33 @@
 )
 
 ;menja tablu odigravanjem datog poteza tako sto prvo skine figuru sa polaznog polja, a zatim je postavi na odrediste
-(defun playTurn(mat turn)
+(defun playTurn(mat turn) ;nema promena
 	(setFigure (cadr turn) (getP mat) (unsetFigure (car turn) mat))
 )
 
 ;dodavanje potrebnih podataka u strukturu koja sadrzi tablu
 ;pamte se velicina polja, ko je na potezu, broj figura jednog i drugog igraca i da li je igra gotova
 ;kljuc 64 se koristi za pamcenje ovih podataka u strukturi gde kljucevi inace oznacavaju broj vrste
-(defun wrapMatrix(p brX brO n mat)
-	(append (list (cons 64 (list (cons n (cons p (cons brX (cons brO (cons '0 '())))))))) mat)
-)  
+(defun wrapMatrix(p brX brO n mat) ;promenjeno
+	(cons (cons n (cons p (cons brX (cons brO '())))) mat)
+)
 
 ;inicijalizuje tablu, koja se pamti kao asocijativna lista asocijativnih listi
 ;pamti se u obliku ((<broj vrste> ((<broj kolone> <vrednost polja>) ...)) ...)
-(defun initMatrix (i n)
+(defun initMatrix (i n) ;promenjeno
 	(cond
 		((= i (1+ n)) '())
-		((< i 3) (cons (append (list i) (list (initRow 1 n 1))) (initMatrix (1+ i) n)))
-		((> i (- n 2)) (cons (append (list i) (list (initRow 1 n 2))) (initMatrix (1+ i) n)))
-		('t (cons (append (list i) (list (initRow 1 n 0))) (initMatrix (1+ i) n)))
+		((< i 3) (cons (initRow 1 n 1) (initMatrix (1+ i) n)))
+		((> i (- n 2)) (cons (initRow 1 n 2) (initMatrix (1+ i) n)))
+		('t (cons (initRow 1 n 0) (initMatrix (1+ i) n)))
 	)
 )
 
 ;inicijalizuje jednu vrstu table sa konkretnim elementima (0 - '-', 1 - 'X', 2 - 'O')
-(defun initRow (j n el)
+(defun initRow (j n el) ;promenjeno
 	(cond
-		((= j (1+ n)) '())
-		('t (cons (list j el) (initRow (1+ j) n el)))
+		((> j n) '()) ;(= j (1+ n))
+		('t (cons el (initRow (1+ j) n el)))
 	)
 )
 
@@ -117,7 +117,7 @@
 )
 
 ;konvertuje vrednost polja u karakter koji treba prikazati (0 -> '-', 1 -> 'X', 2 -> 'O')
-(defun getLetter (p)
+(defun getLetter (p) ;nema promena
 	(cond
 		((= p 0) "-")
 		((= p 1) "X")
@@ -126,7 +126,7 @@
 )
 
 ;konvertuje uneti karakter u broj vrste ('A' -> 1, 'B' -> 2, ..., 'Z' -> 26)
-(defun charToInd (ch)
+(defun charToInd (ch) ;nema promena
 	(let
 		((chCode (char-code (coerce ch 'character))))
 		(cond
@@ -138,7 +138,7 @@
 )
 
 ;konvertuje uneti broj vrste/kolone u karakter koji treba prikazati (1 -> 'A', 2 -> 'B', ..., 26 -> 'Z')
-(defun indToChar (ind)
+(defun indToChar (ind) ;nema promena
 	(cond 
 		((< ind 0) '())
 		((= ind 0) '())
@@ -148,47 +148,56 @@
 )
 
 ;vraca velicinu table
-(defun getN (mat)
-	(caadr (assoc 64 mat))
+(defun getN (mat) ;promenjeno
+	(nth 0 (car mat))
 )
 
 ;vraca igraca koji je trenutno na potezu
-(defun getP (mat)
-	(cadadr (assoc 64 mat))
+(defun getP (mat) ;promenjeno
+	(nth 1 (car mat))
 )
 
 ;braca broj figura igraca X
-(defun getNX (mat)
-	(caddr (cadr (assoc 64 mat)))
+(defun getNX (mat) ;promenjeno
+	(nth 2 (car mat))
 )
 
 ;vraca broj figura igraca O
-(defun getNO (mat)
-	(caddr (cdadr (assoc 64 mat)))
+(defun getNO (mat) ;promenjeno
+	(nth 3 (car mat))
 )
 
-;vraca da li je igra gotova
-(defun getFinished (mat)
-	(caddddr (cadr (assoc 64 mat)))
+(defun setNth (n el lista)
+	(cond
+		((null lista) '())
+		((= n 0) (cons el (cdr lista)))
+		('t (cons (car lista) (setNth (1- n) el (cdr lista))))
+	)
 )
 
 ;postavlja novog igraca koji je na potezu, prakticno radi wrapMatrix sa novom vrednoscu
-(defun setP (mat p)
-	(append (list (cons 64 (list (cons (caadr (assoc 64 mat)) (cons p (cddadr (assoc 64 mat))))))) (cdr mat))
+(defun setP (mat p) ;promenjeno
+	;(append (list (cons 64 (list (cons (caadr (assoc 64 mat)) (cons p (cddadr (assoc 64 mat))))))) (cdr mat))
+	;(cons (list (getN mat) p (cddar mat)) (cdr mat))
+	(cons (setNth 1 p (car mat)) (cdr mat))
 )
 
 ;postavlja novi broj figura igraca X, slicno kao funkcija setP
-(defun setNX (mat newNX)
-	(append (list (cons 64 (list (append (list (caadr (assoc 64 mat)) (cadadr (assoc 64 mat)))(cons newNX (cdr (cddadr (assoc 64 mat)))))))) (cdr mat))
+(defun setNX (mat newNX) ;promenjeno
+	;(append (list (cons 64 (list (append (list (caadr (assoc 64 mat)) (cadadr (assoc 64 mat)))(cons newNX (cdr (cddadr (assoc 64 mat)))))))) (cdr mat))
+	;(cons (list (getN mat) (getP mat) newNx (getNO mat)) (cdr mat))
+	(cons (setNth 2 newNX (car mat)) (cdr mat))
 )
 
-;postavlja novi brjo figura igraca O, slicno kao funkcije setP i setNX
-(defun setNO (mat newNO)
-	(append (list (cons 64 (list (append (list (caadr (assoc 64 mat)) (cadadr (assoc 64 mat)) (car (cddadr (assoc 64 mat)))) (cons newNO (cddr (cddadr (assoc 64 mat)))))))) (cdr mat))
+;postavlja novi broj figura igraca O, slicno kao funkcije setP i setNX
+(defun setNO (mat newNO) ;promenjeno
+	;(append (list (cons 64 (list (append (list (caadr (assoc 64 mat)) (cadadr (assoc 64 mat)) (car (cddadr (assoc 64 mat)))) (cons newNO (cddr (cddadr (assoc 64 mat)))))))) (cdr mat))
+	;(cons (list (getN mat) (getP mat) (getNX mat) newNO) (cdr mat))
+	(cons (setNth 3 newNO (car mat)) (cdr mat))
 )
 
 ;dekrementira broj figura igraca p, koristi se prilikom brisanja horizontalnog/vertikalnog niza figura pri pravljenju sendvica
-(defun setNewFigureCount (mat p)
+(defun setNewFigureCount (mat p) ;nema promena
 	(cond 
 		((= p 1) (setNX mat (1- (getNX mat))))
 		('t (setNO mat (1- (getNO mat))))
@@ -196,7 +205,7 @@
 )
 
 ;ucitava potez oblika '<polazna vrsta> <polazna kolona> <dolazna vrsta> <dolazna kolona>' od korisnika
-(defun promptForTurn (p err mat)
+(defun promptForTurn (p err mat) ;nema promena
 	(progn
 		(cond
 			((not (null err)) (format t "~%Potez nije validan!"))
@@ -213,7 +222,7 @@
 )
 
 ;nakon ispitivanja validnosti poteza vraca potez strukture ((<polazna vrsta> <polazna kolona>) (<dolazna vrsta> <dolazna kolona>))
-(defun makeTurn (turn mat)
+(defun makeTurn (turn mat) ;nema promena
 	(cond
 		((turnInvalid turn (getN mat) (getP mat) mat) '())
 		('t (makeTurnStruct turn))
@@ -221,17 +230,17 @@
 )
 
 ;pravi strukturu poteza koju vraca funkcija makeTurn
-(defun makeTurnStruct (turn)
+(defun makeTurnStruct (turn) ;nema promena
 	(list 
 		(list (charToInd (car turn)) (cadr turn)) 
 		(list (charToInd (caddr turn)) (cadddr turn))
 	)
 )
 
-;ispituje validnost poteza koji je uneti
+;ispituje validnost poteza koji je unet
 ;ispituje kompletnost unosa, prekoracenje table, validnost pravca kretanja, zauzetost dolaznog polja, odsustvo figure na polaznom polju
 ;takodje ispituje da li je potez blokiran, tj da li nema figura izmedju polaznog i dolaznog polja
-(defun turnInvalid (turn n p mat)
+(defun turnInvalid (turn n p mat) ;nema promena
 	(let*
 		(
 			(turnStruct (makeTurnStruct turn))
@@ -268,11 +277,11 @@
 )
 
 ;ispituje blokiranje poteza po horizontali, sluzi funkciji turnBlocked
-(defun horizontalTurnBlocked (currMove offset turnStruct p mat)
+(defun horizontalTurnBlocked (currMove offset turnStruct p mat) ;nema promena
 	(let
 		((x (caar turnStruct)) (y (+ (cadar turnStruct) currMove)))
 		(cond
-			((= (- (abs currMove) (abs offset)) 1)  '())
+			((= (- (abs currMove) (abs offset)) 1) '())
 			((and (= (abs offset) 2) (= (getValue x y mat) (logxor p 3)))
 				(if (< currMove 0)
 					(horizontalTurnBlocked (1- currMove) offset turnStruct p mat)
@@ -280,7 +289,8 @@
 				)
 			)
 			((> (getValue x y mat) 0) t)
-			('t 	(if (< currMove 0)
+			('t 	
+				(if (< currMove 0)
 					(horizontalTurnBlocked (1- currMove) offset turnStruct p mat)
 					(horizontalTurnBlocked (1+ currMove) offset turnStruct p mat)
 				)
@@ -290,7 +300,7 @@
 )
 
 ;ispituje blokiranje poteza po vertikali, sluzi funkciji turnBlocked
-(defun verticalTurnBlocked (currMove offset turnStruct p mat)
+(defun verticalTurnBlocked (currMove offset turnStruct p mat) ;nema promena
 	(let
 		((x (+ (caar turnStruct) currMove)) (y (cadar turnStruct)))
 		(cond
@@ -302,7 +312,8 @@
 				)
 			)
 			((> (getValue x y mat) 0) 't)
-			('t 	(if (< currMove 0)
+			('t
+				(if (< currMove 0)
 					(verticalTurnBlocked (1- currMove) offset turnStruct p mat)
 					(verticalTurnBlocked (1+ currMove) offset turnStruct p mat)
 				)
@@ -317,43 +328,43 @@
 )
 
 ;vraca vrednost polja table sa koordinatama (i, j)
-(defun getValue (i j mat)
-	(cadr (assoc j (cadr (assoc i mat))))
+(defun getValue (i j mat) ;promenjeno
+	(nth (1- j) (nth i mat))
 )
 
 ;resetuje vrednost polja table na poziciji pos
-(defun unsetFigure (pos mat)
+(defun unsetFigure (pos mat) ;promenjeno
 	(cond
 		((null mat) '())
-		((equal (car pos) (caar mat)) (cons (cons (caar mat) (list (unsetFromRow (cadr pos) (cadar mat)))) (cdr mat)))
-		('t (cons (car mat) (unsetFigure pos (cdr mat))))
+		((= (car pos) 0) (cons (unsetFromRow (cadr pos) (car mat)) (cdr mat)))
+		('t (cons (car mat) (unsetFigure (cons (1- (car pos)) (cdr pos)) (cdr mat))))
 	)
 )
 
 ;resetuje polje sa indeksom ind u vrsti row, sluzi funkciji unsetFigure
-(defun unsetFromRow (ind row)
+(defun unsetFromRow (ind row) ;promenjeno
 	(cond
 		((null row) '())
-		((equal ind (caar row)) (cons (list ind 0) (cdr row)))
-		('t (cons (car row) (unsetFromRow ind (cdr row))))
+		((= ind 0) (cons 0 (cdr row)))
+		('t (cons (car row) (unsetFromRow (1- ind) (cdr row))))
 	)
 )
 
 ;postavlja vrednost val na polje table sa pozicijom pos
-(defun setFigure (pos val mat)
+(defun setFigure (pos val mat) ;promenjeno
 	(cond
 		((null mat) '())
-		((equal (car pos) (caar mat)) (cons (list (caar mat) (setToRow (cadr pos) val (cadar mat))) (cdr mat)))
-		('t (cons (car mat) (setFigure pos val (cdr mat))))
+		((= (car pos) 0) (cons (setToRow (cadr pos) val (car mat)) (cdr mat)))
+		('t (cons (car mat) (setFigure (cons (1- (car pos)) (cdr pos)) val (cdr mat))))
 	)
 )
 
 ;postavlja vrednost val na polje sa indeksom ind u vrsti row, sluzi funkciji setFigure
-(defun setToRow (ind val row)
+(defun setToRow (ind val row) ;promenjeno
 	(cond
 		((null row) '())
-		((equal ind (caar row)) (cons (list ind val) (cdr row)))
-		('t (cons (car row) (setToRow ind val (cdr row))))
+		((= ind 0) (cons val (cdr row)))
+		('t (cons (car row) (setToRow (1- ind) val (cdr row))))
 	)
 )
 

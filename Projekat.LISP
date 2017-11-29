@@ -555,12 +555,25 @@
 	)
 )
 
+(defun getMoveList (mat p)
+	(let
+		((positions (getAllFigurePositions mat p '())))
+		(getPossibleMoves mat p positions)
+	)
+)
+
+(defun getPossibleMoves (mat p positions)
+	(cond
+		((null positions) '())
+		('t (append (getMovesFromPosition mat p (car positions)) (getPossibleMoves mat p (cdr positions))))
+	)
+)
+
 (defun getAllFigurePositions(mat p li)
-  (dotimes (i (1+ n))
+	(dotimes (i (1+ n))
 		(cond
 			((= i 0))
-			('t
-				
+			('t	
 				(dotimes (j (1+ n))
 					(cond
 						((> j 0)  (if (equal (getValue i j mat) p) (cons (list i j) li)))
@@ -570,5 +583,47 @@
 			) 
 		)
 	)
-  li
+	li
 )
+
+(defun getMovesFromPosition (pot player mat)
+	(append (verticalMoves pot pot player mat 0) (horizontalMoves pot pot player mat 0))
+)
+
+(defun horizontalMoves (pot prev player mat direction)
+	(cond 
+		((= direction 0) (append (horizontalMoves (list (car pot) (1- (cadr pot))) prev player  mat 1) (horizontalMoves (list (car pot) (1+ (cadr pot))) prev player mat -1)))
+		((< direction 0)
+			(cond
+				((not (equal (getValue (car pot) (cadr pot) mat) 0)) '())
+				('t (cons (list prev pot) (horizontalMoves (list (car pot) (1+ (cadr pot))) prev player  mat -1)))
+				
+			)
+		)
+		('t
+			(cond
+				((not (equal (getValue (car pot) (cadr pot) mat) 0)) '())
+				('t (cons (list prev pot) (horizontalMoves (list (car pot) (1- (cadr pot))) prev player mat 1)))
+			)
+		)
+	)
+)
+
+(defun verticalMoves (pot prev player  mat direction)
+	(cond
+		((= direction 0) (append (verticalMoves (list (1- (car pot)) (cadr pot)) prev player mat 1) (verticalMoves (list (1+ (car pot)) (cadr pot)) prev player mat -1)))
+		((< direction 0)
+			(cond
+				((not (equal (getValue (car pot) (cadr pot) mat) 0)) '())
+				('t (cons (list prev pot)(verticalMoves (list (1+ (car pot)) (cadr pot)) prev player mat -1)))
+			)
+		)
+		('t
+			(cond
+				((not (equal (getValue (car pot) (cadr pot) mat) 0)) '())
+				('t (cons (list prev pot)(verticalMoves (list (1- (car pot)) (cadr pot)) prev player mat 1)))
+			)
+		)
+	)
+)
+
