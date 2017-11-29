@@ -554,21 +554,3 @@
 		)
 	)
 )
-
-(defun getAllFigurePositions(mat p li)
-  (dotimes (i (1+ n))
-		(cond
-			((= i 0))
-			('t
-				
-				(dotimes (j (1+ n))
-					(cond
-						((> j 0)  (if (equal (getValue i j mat) p) (cons (list i j) li)))
-						('t )
-					)
-				)
-			) 
-		)
-	)
-  li
-)
