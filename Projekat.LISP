@@ -569,22 +569,6 @@
 	)
 )
 
-(defun getAllFigurePositions(mat p li)
-	(dotimes (i (1+ n))
-		(cond
-			((= i 0))
-			('t	
-				(dotimes (j (1+ n))
-					(cond
-						((> j 0)  (if (equal (getValue i j mat) p) (cons (list i j) li)))
-						('t )
-					)
-				)
-			) 
-		)
-	)
-	li
-)
 
 (defun getMovesFromPosition (pot player mat)
 	(append (verticalMoves pot pot player mat 0) (horizontalMoves pot pot player mat 0))
@@ -627,3 +611,14 @@
 	)
 )
 
+(defun getAllFigurePositions(mat p i)
+  (cond ((< (getN mat) i) ())
+        ('t (cons (getAllFigurePositions mat p (1+ i)) (getAllFigurePositionsV mat (car (cdr (assoc i mat))) p i '0)))
+))
+
+(defun getAllFigurePositionsV(mat col p i j)
+  (cond ((< (getN mat) j) ())
+        ((equal (getValue i j mat) p) (cons (list i j) (getAllFigurePositionsV mat col p i (1+ j))))
+        ('t (getAllFigurePositionsV mat col p i (1+ j)))
+)
+)
