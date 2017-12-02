@@ -29,9 +29,9 @@
 			('t (format t "~%Unesite prvog igraca (1 X) (2 O): "))
 		)
 		(let*
-			((N (read)))
+			((P (read)))
 			(cond 
-				((or (= N 1) (= N 2)) N)
+				((or (= P 1) (= P 2)) P)
 				('t (startGameInternPRead 't))
 			)
 		)
@@ -40,7 +40,7 @@
 
 ;inicijalizuje tablu sa pratecim podacima i pokrece igru
 (defun game (n p) ;nema promena
-	(gamePlay (wrapMatrix p (* n 2) (* n 2) n (initMatrix 1 n)))
+	(gamePlay (wrapMatrix p (* n 2) (* n 2) (1- n) (initMatrix 0 (1- n)))) ;(1- n) da bi bilo 0..n-1, takodje 0 na initMatrix
 )
 
 ;game loop koji u svakom potezu ispituje win condition, da li je doslo do sendvica
@@ -55,7 +55,10 @@
 			(matrix (sandwich (caadr move) (cadadr move) currP nextP (playTurn mat move)))
 		)
 		(cond
-			((isWin (caadr move) (cadadr move) currP matrix (getN matrix)) (write "you win")) 
+			((isWin (caadr move) (cadadr move) currP matrix (getN matrix))
+				(showMatrix (getN matrix) matrix)
+				(format t "~%~a je pobedio!" (getLetter currP))
+			) 
 			('t (gamePlay (setP matrix nextP)))
 		)
 	)
@@ -63,51 +66,51 @@
 
 ;menja tablu odigravanjem datog poteza tako sto prvo skine figuru sa polaznog polja, a zatim je postavi na odrediste
 (defun playTurn(mat turn) ;nema promena
-	(setFigure (cadr turn) (getP mat) (unsetFigure (car turn) mat))
+	(cons (setFigure (cadr turn) (getP mat) (unsetFigure (car turn) (car mat))) (cdr mat))
 )
 
 ;dodavanje potrebnih podataka u strukturu koja sadrzi tablu
 ;pamte se velicina polja, ko je na potezu, broj figura jednog i drugog igraca i da li je igra gotova
 ;kljuc 64 se koristi za pamcenje ovih podataka u strukturi gde kljucevi inace oznacavaju broj vrste
 (defun wrapMatrix(p brX brO n mat) ;promenjeno
-	(cons (cons n (cons p (cons brX (cons brO '())))) mat)
+	(cons mat (list (cons n (cons p (cons brX (cons brO '()))))))
 )
 
 ;inicijalizuje tablu, koja se pamti kao asocijativna lista asocijativnih listi
 ;pamti se u obliku ((<broj vrste> ((<broj kolone> <vrednost polja>) ...)) ...)
 (defun initMatrix (i n) ;promenjeno
 	(cond
-		((= i (1+ n)) '())
-		((< i 3) (cons (initRow 1 n 1) (initMatrix (1+ i) n)))
-		((> i (- n 2)) (cons (initRow 1 n 2) (initMatrix (1+ i) n)))
-		('t (cons (initRow 1 n 0) (initMatrix (1+ i) n)))
+		((> i n) '())
+		((< i 2) (cons (initRow 0 n 1) (initMatrix (1+ i) n)))
+		((> i (- n 2)) (cons (initRow 0 n 2) (initMatrix (1+ i) n)))
+		('t (cons (initRow 0 n 0) (initMatrix (1+ i) n)))
 	)
 )
 
 ;inicijalizuje jednu vrstu table sa konkretnim elementima (0 - '-', 1 - 'X', 2 - 'O')
 (defun initRow (j n el) ;promenjeno
 	(cond
-		((> j n) '()) ;(= j (1+ n))
+		((> j n) '())
 		('t (cons el (initRow (1+ j) n el)))
 	)
 )
 
 ;stampa sadrzaj table na standardni izlaz
 (defun showMatrix (n mat)
-	(dotimes (g (1+ n))
+	(dotimes (g (+ n 2))
 		(cond
 			((= g 0) (format t "  "))
 			('t (format t " ~d " g ))
 		)
 	)
-	(dotimes (i (1+ n))
+	(dotimes (i (+ n 2))
 		(cond
 			((= i 0) (format t "   "))
 			('t
-				(print (indToChar i))
-				(dotimes (j (1+ n))
+				(print (indToChar (1- i)))
+				(dotimes (j (+ n 2))
 					(cond
-						((> j 0) (format t "|~a|" (getLetter (getValue i j mat))))
+						((> j 0) (format t "|~a|" (getLetter (getValue (1- i) (1- j) mat))))
 						('t '" ")
 					)
 				)
@@ -132,7 +135,7 @@
 		(cond
 			((> chCode 90) '())
 			((< chCode 65) '())
-			('t (- chCode 64))
+			('t (- chCode 65))
 		)
 	)
 )
@@ -141,30 +144,33 @@
 (defun indToChar (ind) ;nema promena
 	(cond 
 		((< ind 0) '())
-		((= ind 0) '())
 		((> ind 26) '())
-		('t (car (list (intern (string (code-char (+ ind 64)))))))
+		('t (car (list (intern (string (code-char (+ ind 65)))))))
 	)
 )
 
 ;vraca velicinu table
 (defun getN (mat) ;promenjeno
-	(nth 0 (car mat))
+	;(nth 0 (car mat))
+	(nth 0 (nth 1 mat))
 )
 
 ;vraca igraca koji je trenutno na potezu
 (defun getP (mat) ;promenjeno
-	(nth 1 (car mat))
+	;(nth 1 (car mat))
+	(nth 1 (nth 1 mat))
 )
 
 ;braca broj figura igraca X
 (defun getNX (mat) ;promenjeno
-	(nth 2 (car mat))
+	;(nth 2 (car mat))
+	(nth 2 (nth 1 mat))
 )
 
 ;vraca broj figura igraca O
 (defun getNO (mat) ;promenjeno
-	(nth 3 (car mat))
+	;(nth 3 (car mat))
+	(nth 3 (nth 1 mat))
 )
 
 (defun setNth (n el lista)
@@ -177,23 +183,17 @@
 
 ;postavlja novog igraca koji je na potezu, prakticno radi wrapMatrix sa novom vrednoscu
 (defun setP (mat p) ;promenjeno
-	;(append (list (cons 64 (list (cons (caadr (assoc 64 mat)) (cons p (cddadr (assoc 64 mat))))))) (cdr mat))
-	;(cons (list (getN mat) p (cddar mat)) (cdr mat))
-	(cons (setNth 1 p (car mat)) (cdr mat))
+	(cons (car mat) (list (setNth 1 p (nth 1 mat))))
 )
 
 ;postavlja novi broj figura igraca X, slicno kao funkcija setP
 (defun setNX (mat newNX) ;promenjeno
-	;(append (list (cons 64 (list (append (list (caadr (assoc 64 mat)) (cadadr (assoc 64 mat)))(cons newNX (cdr (cddadr (assoc 64 mat)))))))) (cdr mat))
-	;(cons (list (getN mat) (getP mat) newNx (getNO mat)) (cdr mat))
-	(cons (setNth 2 newNX (car mat)) (cdr mat))
+	(cons (car mat) (list (setNth 2 newNX (nth 1 mat))))
 )
 
 ;postavlja novi broj figura igraca O, slicno kao funkcije setP i setNX
 (defun setNO (mat newNO) ;promenjeno
-	;(append (list (cons 64 (list (append (list (caadr (assoc 64 mat)) (cadadr (assoc 64 mat)) (car (cddadr (assoc 64 mat)))) (cons newNO (cddr (cddadr (assoc 64 mat)))))))) (cdr mat))
-	;(cons (list (getN mat) (getP mat) (getNX mat) newNO) (cdr mat))
-	(cons (setNth 3 newNO (car mat)) (cdr mat))
+	(cons (car mat) (list (setNth 3 newNO (nth 1 mat))))
 )
 
 ;dekrementira broj figura igraca p, koristi se prilikom brisanja horizontalnog/vertikalnog niza figura pri pravljenju sendvica
@@ -209,7 +209,7 @@
 	(progn
 		(cond
 			((not (null err)) (format t "~%Potez nije validan!"))
-			('t (format t "~%~a je na potezu:" p))
+			('t (format t "~%~a je na potezu: " (getLetter p)))
 		)
 		(let*
 			((turnList (readList (read-line))) (turnStruct (makeTurn turnList mat)))
@@ -232,8 +232,8 @@
 ;pravi strukturu poteza koju vraca funkcija makeTurn
 (defun makeTurnStruct (turn) ;nema promena
 	(list 
-		(list (charToInd (car turn)) (cadr turn)) 
-		(list (charToInd (caddr turn)) (cadddr turn))
+		(list (charToInd (car turn)) (1- (cadr turn)))
+		(list (charToInd (caddr turn)) (1- (cadddr turn)))
 	)
 )
 
@@ -253,10 +253,10 @@
 			((< (length (car turnStruct)) 2) 't)
 			((< (length (cadr turnStruct)) 2) 't)
 			((equal (equal colF colT) (equal rowF rowT)) 't)
-			((or (> colF n) (< colF 1)) 't)
-			((or (> rowF n) (< rowF 1)) 't)
-			((or (> colT n) (< colT 1)) 't)
-			((or (> rowT n) (< rowT 1)) 't)
+			((or (> colF n) (< colF 0)) 't)
+			((or (> rowF n) (< rowF 0)) 't)
+			((or (> colT n) (< colT 0)) 't)
+			((or (> rowT n) (< rowT 0)) 't)
 			((not (= (getValue rowF colF mat) p)) 't)
 			((> (getValue rowT colT mat) 0) 't)
 			((turnBlocked turnStruct p mat) 't)
@@ -329,7 +329,7 @@
 
 ;vraca vrednost polja table sa koordinatama (i, j)
 (defun getValue (i j mat) ;promenjeno
-	(nth (1- j) (nth i mat))
+	(nth j (nth i (car mat)))
 )
 
 ;resetuje vrednost polja table na poziciji pos
@@ -372,7 +372,8 @@
 ;sve izmedju ovih koordinata treba da bude uklonjeno (protivnicke figure)
 (defun isSandwichVertical (i j player1 player2 mat direction)
 	(cond
-		((= direction 0) (list (isSandwichVertical (1- i) j player1 player2 mat '1) (isSandwichVertical (1+ i) j player1 player2 mat -1)))
+		((or (< i 0) (> i (getN mat))) '())
+		((= direction 0) (list (isSandwichVertical (1- i) j player1 player2 mat 1) (isSandwichVertical (1+ i) j player1 player2 mat -1)))
 		((< direction 0)
 			(cond
 				((equal (getValue i j mat) player2) (isSandwichVertical (1+ i) j player1 player2 mat -1))
@@ -382,7 +383,7 @@
 		)
 		('t
 			(cond
-				((equal (getValue i j mat) player2) (isSandwichVertical (1- i) j player1 player2 mat '1))
+				((equal (getValue i j mat) player2) (isSandwichVertical (1- i) j player1 player2 mat 1))
 				((equal (getValue i j mat) player1) i)
 				('t '())
 			)
@@ -393,8 +394,9 @@
 ;ispituje postojanje sendvica po horizontali, vraca koordinate pocetka i koordinate kraja sendvica
 ;sve izmedju ovih koordinata treba da bude uklonjeno (protivnicke figure)
 (defun isSandwichHorizontal (i j player1 player2 mat direction)
-	(cond 
-		((= direction 0) (list (isSandwichHorizontal i (1- j) player1 player2 mat '1) (isSandwichHorizontal i (1+ j) player1 player2 mat -1)))
+	(cond
+		((or (< j 0) (> j (getN mat))) '())
+		((= direction 0) (list (isSandwichHorizontal i (1- j) player1 player2 mat 1) (isSandwichHorizontal i (1+ j) player1 player2 mat -1)))
 		((< direction 0)
 			(cond
 				((equal (getValue i j mat) player2) (isSandwichHorizontal i (1+ j) player1 player2 mat -1))
@@ -404,7 +406,7 @@
 		)
 		('t
 			(cond
-				((equal (getValue i j mat) player2) (isSandwichHorizontal i (1- j) player1 player2 mat '1))
+				((equal (getValue i j mat) player2) (isSandwichHorizontal i (1- j) player1 player2 mat 1))
 				((equal (getValue i j mat) player1) j)
 				('t '())
 			)
@@ -419,7 +421,7 @@
 		((null startJ) (removeHorizontalEnemy i j endJ j mat p))
 		((null endJ) (removeHorizontalEnemy i startJ j j mat p))
 		((equal startJ j) (removeHorizontalEnemy i (1+ startJ) endJ j mat p)) 
-		((< startJ endJ) (removeHorizontalEnemy i (1+ startJ) endJ j (setFigure (list i startJ) '0 (setNewFigureCount mat p)) p))
+		((< startJ endJ) (removeHorizontalEnemy i (1+ startJ) endJ j (setNewFigureCount (cons (setFigure (list i startJ) '0 (car mat)) (cdr mat)) p) p))
 		('t mat)
 	)
 )
@@ -431,7 +433,7 @@
 		((null startI) (removeVerticalEnemy j i endI i mat p))
 		((null endI) (removeVerticalEnemy j startI i i mat p))
 		((equal startI i) (removeVerticalEnemy j (1+ startI) endI i mat p)) 
-		((< startI endI) (removeVerticalEnemy j (1+ startI) endI i (setFigure (list startI j) '0 (setNewFigureCount mat p)) p))
+		((< startI endI) (removeVerticalEnemy j (1+ startI) endI i (setNewFigureCount (cons (setFigure (list startI j) '0 (car mat)) (cdr mat)) p) p))
 		('t mat)
 	)
 )
@@ -465,18 +467,19 @@
 ;slicno kao za sendvic, samo sto sabira koliko uzastopnih figura su figure igraca koji je odgigrao potez
 ;(i, j) su koordinate odigranog poteza, direction oznacava pravac u kom se vrsi vertikalni obilazak
 (defun sumVertical (i j player mat n direction)
-	(cond 
-		((= direction 0) (+ 1 (sumVertical (1+ i) j player mat n -1) (sumVertical (1- i) j player mat n '1)))
+	(cond
+		((or (< i 0) (< j 0)) 0)
+		((= direction 0) (+ 1 (sumVertical (1+ i) j player mat n -1) (sumVertical (1- i) j player mat n 1)))
 		((< direction 0)
 			(cond
-				((and (equal (getValue i j mat) player) (notInOwnField i  player n)) (+ (sumVertical (1+ i) j player mat n -1) '1))
-				('t '0)
+				((and (equal (getValue i j mat) player) (notInOwnField i  player n)) (+ (sumVertical (1+ i) j player mat n -1) 1))
+				('t 0)
 			)
 		)
 		('t
 			(cond
-				((and (equal (getValue i j mat) player) (notInOwnField i  player n)) (+ (sumVertical (1- i) j player mat n 1) '1))
-				('t '0)
+				((and (equal (getValue i j mat) player) (notInOwnField i  player n)) (+ (sumVertical (1- i) j player mat n 1) 1))
+				('t 0)
 			)
 		)
 	)
@@ -485,18 +488,19 @@
 ;sabira koliko uzastopnih figura su figure igraca koji je odgigrao potez na poziciju (i, j)
 ;direction oznacava pravac u kom se vrsi obilazak glavne/sporedne dijagonale, u zavisnosti od toga da li je igrac X ili O
 (defun sumDiagonalRight (i j player mat n direction)
-	(cond 
-		((= direction 0) (+ 1 (sumDiagonalRight (1+ i) (1+ j) player mat n -1) (sumDiagonalRight (1- i) (1- j) player mat n '1)))
+	(cond
+		((or (< i 0) (< j 0)) 0)
+		((= direction 0) (+ 1 (sumDiagonalRight (1+ i) (1+ j) player mat n -1) (sumDiagonalRight (1- i) (1- j) player mat n 1)))
 		((< direction 0)
 			(cond
-				((and (equal (getValue i j mat) player) (notInOwnField i  player n)) (+ (sumDiagonalRight (1+ i) (1+ j) player mat n -1) '1))
-				('t '0)
+				((and (equal (getValue i j mat) player) (notInOwnField i  player n)) (+ (sumDiagonalRight (1+ i) (1+ j) player mat n -1) 1))
+				('t 0)
 			)
 		)
 		('t
 			(cond
-				((and (equal (getValue i j mat) player) (notInOwnField i player n)) (+ (sumDiagonalRight (1- i) (1- j) player mat n 1) '1))
-				('t '0)
+				((and (equal (getValue i j mat) player) (notInOwnField i player n)) (+ (sumDiagonalRight (1- i) (1- j) player mat n 1) 1))
+				('t 0)
 			)
 		)
 	)
@@ -505,18 +509,19 @@
 ;sabira koliko uzastopnih figura su figure igraca koji je odgigrao potez na poziciju (i, j)
 ;direction oznacava pravac u kom se vrsi obilazak sporedne/glavne dijagonale, u zavisnosti od toga da li je igrac X ili O
 (defun sumDiagonalLeft (i j player mat n direction)
-	(cond 
-		((= direction 0) (+ 1 (sumDiagonalLeft (1+ i) (1- j) player mat n -1) (sumDiagonalLeft (1+ i) (1- j) player mat n '1)))
+	(cond
+		((or (< i 0) (< j 0)) 0)
+		((= direction 0) (+ 1 (sumDiagonalLeft (1+ i) (1- j) player mat n -1) (sumDiagonalLeft (1+ i) (1- j) player mat n 1)))
 		((< direction 0)
 			(cond
-				((and (equal (getValue i j mat) player) (notInOwnField i  player n)) (+ (sumDiagonalLeft (1+ i) (1- j) player mat n -1) '1))
-				('t '0)
+				((and (equal (getValue i j mat) player) (notInOwnField i  player n)) (+ (sumDiagonalLeft (1+ i) (1- j) player mat n -1) 1))
+				('t 0)
 			)
 		)
 		('t
 			(cond
-				((and (equal (getValue i j mat) player) (notInOwnField i player n)) (+ (sumDiagonalLeft (1+ i) (1- j) player mat n 1) '1))
-				('t '0)
+				((and (equal (getValue i j mat) player) (notInOwnField i player n)) (+ (sumDiagonalLeft (1+ i) (1- j) player mat n 1) 1))
+				('t 0)
 			)
 		)
 	)
@@ -525,11 +530,11 @@
 ;ispituje win condition, da li protivnik ima manje od 5 figura, ili da li igrac koji je odigrao potez na poziciju (i, j) ima 5 uzastopnih figura
 (defun isWin (i j player mat n)
 	(cond
-		((= player 1) (if (< (getNO mat) '5) 't '()))
-		((= player 2) (if (< (getNX mat) '5) 't '()))
-		((> (sumVertical i j player mat n 0) '4) 't)
-		((> (sumDiagonalRight i j player mat n 0) '4) 't)
-		((> (sumDiagonalLeft i j player mat n 0) '4) 't)
+		((and (= player 1) (< (getNO mat) 5)) 't)
+		((and (= player 2) (< (getNX mat) 5)) 't)
+		((> (sumVertical i j player mat n 0) 4) 't)
+		((> (sumDiagonalRight i j player mat n 0) 4) 't)
+		((> (sumDiagonalLeft i j player mat n 0) 4) 't)
 		('t '())
 	)
 )
@@ -538,9 +543,9 @@
 (defun notInOwnField (i player n)
 	(cond 
 		(
-			(= player 1)	
+			(= player 1)
 			(cond
-				((> i 2) 't)
+				((> i 1) 't)
 				('t '())
 			)
 		)
@@ -563,5 +568,122 @@
 			(cons (read mov) (readList mov))
 			'()
 		)
+	)
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun removeNulls (lista)
+	(cond
+		((null lista) '())
+		((null (car lista)) (removeNulls (cdr lista)))
+		('t (cons (car lista) (removeNulls (cdr lista))))
+	)
+)
+
+(defun getMoveList (mat p)
+	(let
+		((positions (getAllFigurePositions mat p '())))
+		(getPossibleMoves mat p positions)
+	)
+)
+
+(defun getPossibleMoves (mat p positions)
+	(cond
+		((null positions) '())
+		('t (append (getMovesFromPosition mat p (car positions)) (getPossibleMoves mat p (cdr positions))))
+	)
+)
+
+(defun getMovesFromPosition (pot player mat)
+	(append (jumpMoves pot pot player mat 0 0) (verticalMoves pot pot player mat 0) (horizontalMoves pot pot player mat 0))
+)
+
+(defun jumpMoves (pot prev player mat i dir)
+	(cond 
+        ((= i 0)
+			(removeNulls
+				(list
+					(jumpMoves (list (car pot) (1+ (cadr pot))) prev player mat 1 0)
+					(jumpMoves (list (car pot) (1- (cadr pot))) prev player mat 1 1)
+					(jumpMoves (list (1+ (car pot)) (cadr pot)) prev player mat 1 2)
+					(jumpMoves (list (1- (car pot)) (cadr pot)) prev player mat 1 3)
+				)
+			)
+		)
+		((= i 1) 
+			(cond 
+				(
+					(not (or (equal (getValue (car pot) (cadr pot) mat) 0) (equal (getValue (car pot) (cadr pot) mat) player)))
+					(cond
+						((= dir 0) (jumpMoves (list (car pot) (1+ (cadr pot))) prev player mat 2 0))
+						((= dir 1) (jumpMoves (list (car pot) (1- (cadr pot))) prev player mat 2 1))
+						((= dir 2) (jumpMoves (list (1+ (car pot)) (cadr pot)) prev player mat 2 2))
+						((= dir 3) (jumpMoves (list (1- (car pot)) (cadr pot)) prev player mat 2 3))
+                    )
+				)
+			)
+		)
+		((= i 2)
+			(cond
+				((equal (getValue (car pot) (cadr pot) mat) 0) (list prev pot))
+				('t '())
+			)
+		)
+	)
+)
+
+(defun horizontalMoves (pot prev player mat direction)
+	(cond 
+		((= direction 0)
+			(append
+				(horizontalMoves (list (car pot) (1- (cadr pot))) prev player mat 1)
+				(horizontalMoves (list (car pot) (1+ (cadr pot))) prev player mat -1)
+			)
+		)
+		((< direction 0)
+			(cond
+				((not (equal (getValue (car pot) (cadr pot) mat) 0)) '())
+				('t (cons (list prev pot) (horizontalMoves (list (car pot) (1+ (cadr pot))) prev player  mat -1)))
+			)
+		)
+		('t
+			(cond
+				((not (equal (getValue (car pot) (cadr pot) mat) 0)) '())
+				('t (cons (list prev pot) (horizontalMoves (list (car pot) (1- (cadr pot))) prev player mat 1)))
+			)
+		)
+	)
+)
+
+(defun verticalMoves (pot prev player  mat direction)
+	(cond
+		((= direction 0) (append (verticalMoves (list (1- (car pot)) (cadr pot)) prev player mat 1) (verticalMoves (list (1+ (car pot)) (cadr pot)) prev player mat -1)))
+		((< direction 0)
+			(cond
+				((not (equal (getValue (car pot) (cadr pot) mat) 0)) '())
+				('t (cons (list prev pot)(verticalMoves (list (1+ (car pot)) (cadr pot)) prev player mat -1)))
+			)
+		)
+		('t
+			(cond
+				((not (equal (getValue (car pot) (cadr pot) mat) 0)) '())
+				('t (cons (list prev pot)(verticalMoves (list (1- (car pot)) (cadr pot)) prev player mat 1)))
+			)
+		)
+	)
+)
+
+(defun getAllFigurePositions (mat p i)
+	(cond
+		((< (getN mat) i) '())
+		('t (append (getAllFigurePositions mat p (1+ i)) (getAllFigurePositionsV mat (car (cdr (assoc i mat))) p i 0)))
+	)
+)
+
+(defun getAllFigurePositionsV (mat col p i j)
+	(cond ((< (getN mat) j) '())
+		((equal (getValue i j mat) p) (cons (list i j) (getAllFigurePositionsV mat col p i (1+ j))))
+		('t (getAllFigurePositionsV mat col p i (1+ j)))
 	)
 )
