@@ -1,11 +1,11 @@
 
 ;ovom funkcijom se pocinje igra, zove funkcije za unos parametara igre - velicina table i ko prvi igra
-(defun startGame () ;nema promena
+(defun startGame ()
 	(game (startGameInternNRead '()) (startGameInternPRead '()))
 )
 
 ;ucitava velicinu table od korisnika, err je 't ako unos nije validan
-(defun startGameInternNRead (err) ;nema promena
+(defun startGameInternNRead (err)
 	(progn 
 		(cond
 			((not (null err)) (format t "~%Pogresno ste uneli velicinu table: "))
@@ -22,7 +22,7 @@
 )
 
 ;ucitava broj igraca koji je prvi na potezu, err ima istu ulogu kao i u funkciji startGameInternNRead
-(defun startGameInternPRead (err) ;nema promena
+(defun startGameInternPRead (err)
 	(progn 
 		(cond
 			((not (null err)) (format t "~%Pogresno ste uneli prvog igraca (1 X) (2 O): "))
@@ -39,19 +39,32 @@
 )
 
 ;inicijalizuje tablu sa pratecim podacima i pokrece igru
-(defun game (n p) ;nema promena
-	(gamePlay (wrapMatrix p (* n 2) (* n 2) (1- n) (initMatrix 0 (1- n)))) ;(1- n) da bi bilo 0..n-1, takodje 0 na initMatrix
+(defun game (n p)
+	(gamePlay (wrapMatrix p (* n 2) (* n 2) (1- n) (initMatrix 0 (1- n))))
 )
 
 ;game loop koji u svakom potezu ispituje win condition, da li je doslo do sendvica
 ;takodje pita korisnika koji je na potezu koji je novi potez i po unosu ga igra
-(defun gamePlay (mat) ;nema promena
+;ovde se trenutno ne koristi newState funkcija dodata u 2. fazi jer ona menja igraca koji je na potezu
+;a u ovoj funkciji je zamisljeno da se on menja tek na kraju, nakon ispitivanja uslova pobede
+(defun gamePlay (mat)
 	(showMatrix (getN mat) mat)
 	(let*
 		(
 			(currP (getP mat))
 			(nextP (logxor currP 3))
-			(move (promptForTurn currP '() mat))
+			(move
+				(if (= currP 1)
+					(promptForTurn currP '() mat)
+					(let*
+						(
+							(allMoves (getMoveList mat currP))
+							(numOfMoves (length allMoves))
+						)
+						(nth (random numOfMoves) allMoves)
+					)
+				)
+			)
 			(matrix (sandwich (caadr move) (cadadr move) currP nextP (playTurn mat move)))
 		)
 		(cond
@@ -65,20 +78,20 @@
 )
 
 ;menja tablu odigravanjem datog poteza tako sto prvo skine figuru sa polaznog polja, a zatim je postavi na odrediste
-(defun playTurn(mat turn) ;nema promena
+(defun playTurn(mat turn)
 	(cons (setFigure (cadr turn) (getP mat) (unsetFigure (car turn) (car mat))) (cdr mat))
 )
 
 ;dodavanje potrebnih podataka u strukturu koja sadrzi tablu
 ;pamte se velicina polja, ko je na potezu, broj figura jednog i drugog igraca i da li je igra gotova
 ;kljuc 64 se koristi za pamcenje ovih podataka u strukturi gde kljucevi inace oznacavaju broj vrste
-(defun wrapMatrix(p brX brO n mat) ;promenjeno
+(defun wrapMatrix(p brX brO n mat)
 	(cons mat (list (cons n (cons p (cons brX (cons brO '()))))))
 )
 
 ;inicijalizuje tablu, koja se pamti kao asocijativna lista asocijativnih listi
 ;pamti se u obliku ((<broj vrste> ((<broj kolone> <vrednost polja>) ...)) ...)
-(defun initMatrix (i n) ;promenjeno
+(defun initMatrix (i n)
 	(cond
 		((> i n) '())
 		((< i 2) (cons (initRow 0 n 1) (initMatrix (1+ i) n)))
@@ -88,7 +101,7 @@
 )
 
 ;inicijalizuje jednu vrstu table sa konkretnim elementima (0 - '-', 1 - 'X', 2 - 'O')
-(defun initRow (j n el) ;promenjeno
+(defun initRow (j n el)
 	(cond
 		((> j n) '())
 		('t (cons el (initRow (1+ j) n el)))
@@ -97,6 +110,7 @@
 
 ;stampa sadrzaj table na standardni izlaz
 (defun showMatrix (n mat)
+	(format t "~%")
 	(dotimes (g (+ n 2))
 		(cond
 			((= g 0) (format t "  "))
@@ -120,7 +134,7 @@
 )
 
 ;konvertuje vrednost polja u karakter koji treba prikazati (0 -> '-', 1 -> 'X', 2 -> 'O')
-(defun getLetter (p) ;nema promena
+(defun getLetter (p)
 	(cond
 		((= p 0) "-")
 		((= p 1) "X")
@@ -129,7 +143,7 @@
 )
 
 ;konvertuje uneti karakter u broj vrste ('A' -> 1, 'B' -> 2, ..., 'Z' -> 26)
-(defun charToInd (ch) ;nema promena
+(defun charToInd (ch)
 	(let
 		((chCode (char-code (coerce ch 'character))))
 		(cond
@@ -141,7 +155,7 @@
 )
 
 ;konvertuje uneti broj vrste/kolone u karakter koji treba prikazati (1 -> 'A', 2 -> 'B', ..., 26 -> 'Z')
-(defun indToChar (ind) ;nema promena
+(defun indToChar (ind)
 	(cond 
 		((< ind 0) '())
 		((> ind 26) '())
@@ -150,26 +164,22 @@
 )
 
 ;vraca velicinu table
-(defun getN (mat) ;promenjeno
-	;(nth 0 (car mat))
+(defun getN (mat)
 	(nth 0 (nth 1 mat))
 )
 
 ;vraca igraca koji je trenutno na potezu
-(defun getP (mat) ;promenjeno
-	;(nth 1 (car mat))
+(defun getP (mat)
 	(nth 1 (nth 1 mat))
 )
 
 ;braca broj figura igraca X
-(defun getNX (mat) ;promenjeno
-	;(nth 2 (car mat))
+(defun getNX (mat)
 	(nth 2 (nth 1 mat))
 )
 
 ;vraca broj figura igraca O
-(defun getNO (mat) ;promenjeno
-	;(nth 3 (car mat))
+(defun getNO (mat)
 	(nth 3 (nth 1 mat))
 )
 
@@ -182,22 +192,22 @@
 )
 
 ;postavlja novog igraca koji je na potezu, prakticno radi wrapMatrix sa novom vrednoscu
-(defun setP (mat p) ;promenjeno
+(defun setP (mat p)
 	(cons (car mat) (list (setNth 1 p (nth 1 mat))))
 )
 
 ;postavlja novi broj figura igraca X, slicno kao funkcija setP
-(defun setNX (mat newNX) ;promenjeno
+(defun setNX (mat newNX)
 	(cons (car mat) (list (setNth 2 newNX (nth 1 mat))))
 )
 
 ;postavlja novi broj figura igraca O, slicno kao funkcije setP i setNX
-(defun setNO (mat newNO) ;promenjeno
+(defun setNO (mat newNO)
 	(cons (car mat) (list (setNth 3 newNO (nth 1 mat))))
 )
 
 ;dekrementira broj figura igraca p, koristi se prilikom brisanja horizontalnog/vertikalnog niza figura pri pravljenju sendvica
-(defun setNewFigureCount (mat p) ;nema promena
+(defun setNewFigureCount (mat p)
 	(cond 
 		((= p 1) (setNX mat (1- (getNX mat))))
 		('t (setNO mat (1- (getNO mat))))
@@ -205,7 +215,7 @@
 )
 
 ;ucitava potez oblika '<polazna vrsta> <polazna kolona> <dolazna vrsta> <dolazna kolona>' od korisnika
-(defun promptForTurn (p err mat) ;nema promena
+(defun promptForTurn (p err mat)
 	(progn
 		(cond
 			((not (null err)) (format t "~%Potez nije validan!"))
@@ -222,7 +232,7 @@
 )
 
 ;nakon ispitivanja validnosti poteza vraca potez strukture ((<polazna vrsta> <polazna kolona>) (<dolazna vrsta> <dolazna kolona>))
-(defun makeTurn (turn mat) ;nema promena
+(defun makeTurn (turn mat)
 	(cond
 		((turnInvalid turn (getN mat) (getP mat) mat) '())
 		('t (makeTurnStruct turn))
@@ -230,7 +240,7 @@
 )
 
 ;pravi strukturu poteza koju vraca funkcija makeTurn
-(defun makeTurnStruct (turn) ;nema promena
+(defun makeTurnStruct (turn)
 	(list 
 		(list (charToInd (car turn)) (1- (cadr turn)))
 		(list (charToInd (caddr turn)) (1- (cadddr turn)))
@@ -240,7 +250,7 @@
 ;ispituje validnost poteza koji je unet
 ;ispituje kompletnost unosa, prekoracenje table, validnost pravca kretanja, zauzetost dolaznog polja, odsustvo figure na polaznom polju
 ;takodje ispituje da li je potez blokiran, tj da li nema figura izmedju polaznog i dolaznog polja
-(defun turnInvalid (turn n p mat) ;nema promena
+(defun turnInvalid (turn n p mat)
 	(let*
 		(
 			(turnStruct (makeTurnStruct turn))
@@ -277,7 +287,7 @@
 )
 
 ;ispituje blokiranje poteza po horizontali, sluzi funkciji turnBlocked
-(defun horizontalTurnBlocked (currMove offset turnStruct p mat) ;nema promena
+(defun horizontalTurnBlocked (currMove offset turnStruct p mat)
 	(let
 		((x (caar turnStruct)) (y (+ (cadar turnStruct) currMove)))
 		(cond
@@ -300,7 +310,7 @@
 )
 
 ;ispituje blokiranje poteza po vertikali, sluzi funkciji turnBlocked
-(defun verticalTurnBlocked (currMove offset turnStruct p mat) ;nema promena
+(defun verticalTurnBlocked (currMove offset turnStruct p mat)
 	(let
 		((x (+ (caar turnStruct) currMove)) (y (cadar turnStruct)))
 		(cond
@@ -328,12 +338,12 @@
 )
 
 ;vraca vrednost polja table sa koordinatama (i, j)
-(defun getValue (i j mat) ;promenjeno
+(defun getValue (i j mat)
 	(nth j (nth i (car mat)))
 )
 
 ;resetuje vrednost polja table na poziciji pos
-(defun unsetFigure (pos mat) ;promenjeno
+(defun unsetFigure (pos mat)
 	(cond
 		((null mat) '())
 		((= (car pos) 0) (cons (unsetFromRow (cadr pos) (car mat)) (cdr mat)))
@@ -342,7 +352,7 @@
 )
 
 ;resetuje polje sa indeksom ind u vrsti row, sluzi funkciji unsetFigure
-(defun unsetFromRow (ind row) ;promenjeno
+(defun unsetFromRow (ind row)
 	(cond
 		((null row) '())
 		((= ind 0) (cons 0 (cdr row)))
@@ -351,7 +361,7 @@
 )
 
 ;postavlja vrednost val na polje table sa pozicijom pos
-(defun setFigure (pos val mat) ;promenjeno
+(defun setFigure (pos val mat)
 	(cond
 		((null mat) '())
 		((= (car pos) 0) (cons (setToRow (cadr pos) val (car mat)) (cdr mat)))
@@ -360,7 +370,7 @@
 )
 
 ;postavlja vrednost val na polje sa indeksom ind u vrsti row, sluzi funkciji setFigure
-(defun setToRow (ind val row) ;promenjeno
+(defun setToRow (ind val row)
 	(cond
 		((null row) '())
 		((= ind 0) (cons val (cdr row)))
@@ -571,8 +581,18 @@
 	)
 )
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 2. FAZA ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; NAPOMENA! ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;IZVRSENA JE VELIKA PROMENA U STRUKTURI TABLE - TABLA SE SADA PAMTI KAO LISTA LISTI
+;KOMPLETNO STANJE IGRE (mat) SADA IMA OBLIK (((kol) (kol) ...) (n p nx no))
+;DAKLE (car mat) VRACA LISTU KOLONA TABLE, A (cadr mat) VRACA LISTU ATRIBUTA STANJA
+;DVA SU RAZLOGA ZA OVU ODLUKU: JEDNOSTAVNOST KODA I POTENCIJALNO VECE PERFORMANSE
+;MNOGO JE LAKSE PRISTUPATI KORISCENJEM NTH NTH NEGO STO JE TO BILO SA ASSOC ASSOC
+;A POSTOJE I NAZNAKE DA JE PRISTUP BRZI UZ KORISCENJE FUNKCIJE NTH
+;																				   -LUGIC
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;pomocna funkcija koja uklanja sve null vrednosti iz liste, koristi se za ciscenje liste poteza koju vraca funkcija jumpMoves
 (defun removeNulls (lista)
 	(cond
 		((null lista) '())
@@ -581,13 +601,16 @@
 	)
 )
 
+;funkcija koja vraca sve moguce poteze za datu tablu i igraca koji je na potezu
+;prvo nalazi pozicije svih figura tog igraca, a zatim nalazi moguce poteze iz njih pozivajuci funkciju getPossibleMoves
 (defun getMoveList (mat p)
 	(let
-		((positions (getAllFigurePositions mat p '())))
+		((positions (getAllFigurePositions mat p 0)))
 		(getPossibleMoves mat p positions)
 	)
 )
 
+;za svaku od figura nalazi njene moguce poteze, sve poteze smesta u jednu listu i to je lista svih poteza
 (defun getPossibleMoves (mat p positions)
 	(cond
 		((null positions) '())
@@ -595,95 +618,123 @@
 	)
 )
 
-(defun getMovesFromPosition (pot player mat)
-	(append (jumpMoves pot pot player mat 0 0) (verticalMoves pot pot player mat 0) (horizontalMoves pot pot player mat 0))
+;za jednu figuru igraca nalazi sve njene poteze, pos je pozicija figure a p igrac koji je na potezu
+;svi potezi figure su unija svih preskoka, poteza po vertikali i poteza po horizontali koje figura moze da obavi
+(defun getMovesFromPosition (mat p pos)
+	(append (jumpMoves pos pos p mat 0 0) (verticalMoves pos pos p mat 0) (horizontalMoves pos pos p mat 0))
 )
 
-(defun jumpMoves (pot prev player mat i dir)
-	(cond 
+;nalazi sve poteze preskoka igraca p sa pozicije pos, prev je prethodna pozicija, i i dir su pomocne promenljive
+;i je dubina rekurzije funkcije na osnovu koje se vrsi obrada (0 -> pocetak, 1 -> ispituje susednu figuru, 2 -> ispituje polje za doskok)
+;dir je pravac u kome se vrsi ispitivanje (0 -> desno, 1 -> levo, 2 -> dole, 3 -> gore)
+(defun jumpMoves (pos prev p mat i dir)
+	(cond
+		((or (< (car pos) 0) (< (cadr pos) 0)) '())
         ((= i 0)
 			(removeNulls
 				(list
-					(jumpMoves (list (car pot) (1+ (cadr pot))) prev player mat 1 0)
-					(jumpMoves (list (car pot) (1- (cadr pot))) prev player mat 1 1)
-					(jumpMoves (list (1+ (car pot)) (cadr pot)) prev player mat 1 2)
-					(jumpMoves (list (1- (car pot)) (cadr pot)) prev player mat 1 3)
+					(jumpMoves (list (car pos) (1+ (cadr pos))) prev p mat 1 0)
+					(jumpMoves (list (car pos) (1- (cadr pos))) prev p mat 1 1)
+					(jumpMoves (list (1+ (car pos)) (cadr pos)) prev p mat 1 2)
+					(jumpMoves (list (1- (car pos)) (cadr pos)) prev p mat 1 3)
 				)
 			)
 		)
-		((= i 1) 
-			(cond 
+		((= i 1)
+			(cond
 				(
-					(not (or (equal (getValue (car pot) (cadr pot) mat) 0) (equal (getValue (car pot) (cadr pot) mat) player)))
+					(not (or (equal (getValue (car pos) (cadr pos) mat) 0) (equal (getValue (car pos) (cadr pos) mat) p)))
 					(cond
-						((= dir 0) (jumpMoves (list (car pot) (1+ (cadr pot))) prev player mat 2 0))
-						((= dir 1) (jumpMoves (list (car pot) (1- (cadr pot))) prev player mat 2 1))
-						((= dir 2) (jumpMoves (list (1+ (car pot)) (cadr pot)) prev player mat 2 2))
-						((= dir 3) (jumpMoves (list (1- (car pot)) (cadr pot)) prev player mat 2 3))
+						((= dir 0) (jumpMoves (list (car pos) (1+ (cadr pos))) prev p mat 2 0))
+						((= dir 1) (jumpMoves (list (car pos) (1- (cadr pos))) prev p mat 2 1))
+						((= dir 2) (jumpMoves (list (1+ (car pos)) (cadr pos)) prev p mat 2 2))
+						((= dir 3) (jumpMoves (list (1- (car pos)) (cadr pos)) prev p mat 2 3))
                     )
 				)
 			)
 		)
 		((= i 2)
 			(cond
-				((equal (getValue (car pot) (cadr pot) mat) 0) (list prev pot))
+				((equal (getValue (car pos) (cadr pos) mat) 0) (list prev pos))
 				('t '())
 			)
 		)
 	)
 )
 
-(defun horizontalMoves (pot prev player mat direction)
-	(cond 
+;nalazi sve horizontalne poteze igraca p sa pozicije pos, prev je prethodna pozicija
+;direction je pomocna promenljiva koja oznacava smer kretanja (1 -> desno, -1 -> levo)
+(defun horizontalMoves (pos prev p mat direction)
+	(cond
+		((or (< (car pos) 0) (< (cadr pos) 0)) '())
 		((= direction 0)
 			(append
-				(horizontalMoves (list (car pot) (1- (cadr pot))) prev player mat 1)
-				(horizontalMoves (list (car pot) (1+ (cadr pot))) prev player mat -1)
+				(horizontalMoves (list (car pos) (1- (cadr pos))) prev p mat 1)
+				(horizontalMoves (list (car pos) (1+ (cadr pos))) prev p mat -1)
 			)
 		)
 		((< direction 0)
 			(cond
-				((not (equal (getValue (car pot) (cadr pot) mat) 0)) '())
-				('t (cons (list prev pot) (horizontalMoves (list (car pot) (1+ (cadr pot))) prev player  mat -1)))
+				((not (equal (getValue (car pos) (cadr pos) mat) 0)) '())
+				('t (cons (list prev pos) (horizontalMoves (list (car pos) (1+ (cadr pos))) prev p  mat -1)))
 			)
 		)
 		('t
 			(cond
-				((not (equal (getValue (car pot) (cadr pot) mat) 0)) '())
-				('t (cons (list prev pot) (horizontalMoves (list (car pot) (1- (cadr pot))) prev player mat 1)))
+				((not (equal (getValue (car pos) (cadr pos) mat) 0)) '())
+				('t (cons (list prev pos) (horizontalMoves (list (car pos) (1- (cadr pos))) prev p mat 1)))
 			)
 		)
 	)
 )
 
-(defun verticalMoves (pot prev player  mat direction)
+;nalazi sve vertikalne poteze igraca p sa pozicije pos, prev je prethodna pozicija
+;direction je pomocna promenljiva koja oznacava smer kretanja (1 -> nanize, -1 -> navise)
+(defun verticalMoves (pos prev p mat direction)
 	(cond
-		((= direction 0) (append (verticalMoves (list (1- (car pot)) (cadr pot)) prev player mat 1) (verticalMoves (list (1+ (car pot)) (cadr pot)) prev player mat -1)))
+		((or (< (car pos) 0) (< (cadr pos) 0)) '())
+		((= direction 0) 
+			(append
+				(verticalMoves (list (1- (car pos)) (cadr pos)) prev p mat 1)
+				(verticalMoves (list (1+ (car pos)) (cadr pos)) prev p mat -1)
+			)
+		)
 		((< direction 0)
 			(cond
-				((not (equal (getValue (car pot) (cadr pot) mat) 0)) '())
-				('t (cons (list prev pot)(verticalMoves (list (1+ (car pot)) (cadr pot)) prev player mat -1)))
+				((not (equal (getValue (car pos) (cadr pos) mat) 0)) '())
+				('t (cons (list prev pos) (verticalMoves (list (1+ (car pos)) (cadr pos)) prev p mat -1)))
 			)
 		)
 		('t
 			(cond
-				((not (equal (getValue (car pot) (cadr pot) mat) 0)) '())
-				('t (cons (list prev pot)(verticalMoves (list (1- (car pot)) (cadr pot)) prev player mat 1)))
+				((not (equal (getValue (car pos) (cadr pos) mat) 0)) '())
+				('t (cons (list prev pos) (verticalMoves (list (1- (car pos)) (cadr pos)) prev p mat 1)))
 			)
 		)
 	)
 )
 
+;funkcija koja nalazi pozicije svih figura igraca p, i je pomocni indeks koji ide od 0
 (defun getAllFigurePositions (mat p i)
 	(cond
 		((< (getN mat) i) '())
-		('t (append (getAllFigurePositions mat p (1+ i)) (getAllFigurePositionsV mat (car (cdr (assoc i mat))) p i 0)))
+		('t (append (getAllFigurePositions mat p (1+ i)) (getAllFigurePositionsV mat (nth i (car mat)) p i 0)))
 	)
 )
 
+;pomocna funkcija za nalazenje pozicija svih figura igraca p, obradjuje jednu vrstu
 (defun getAllFigurePositionsV (mat col p i j)
-	(cond ((< (getN mat) j) '())
+	(cond
+		((< (getN mat) j) '())
 		((equal (getValue i j mat) p) (cons (list i j) (getAllFigurePositionsV mat col p i (1+ j))))
 		('t (getAllFigurePositionsV mat col p i (1+ j)))
+	)
+)
+
+;menja stanje prosledjenim potezom, vraca stanje posle odigranog poteza
+(defun newState (mat move)
+	(let*
+		((currP (getP mat)) (nextP (logxor currP 3)))
+		(setP (sandwich (caadr move) (cadadr move) currP nextP (playTurn mat move)) nextP)
 	)
 )
