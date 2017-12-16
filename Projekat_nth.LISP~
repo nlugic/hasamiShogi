@@ -56,7 +56,7 @@
 			(move
 				(if (= currP 1)
 					(promptForTurn currP '() mat)
-					(car (alphaBeta '() mat currP 3 -1001 1001))
+					(car (alphaBeta '() mat currP 1 -1001 1001))
 					;(let*
 					;	(
 					;		(allMoves (getMoveList mat currP))
@@ -747,8 +747,8 @@
 		((listaPoteza (getMoveList mat p)))
 		(cond
 			((or (null listaPoteza) (zerop d)) (evaluate pot mat p))
-			((= p 1) (maxState mat listapoteza (cons (car listaPoteza) (list -1000)) d alfa beta))
-			('t (minState mat listapoteza (cons (car listaPoteza) (list 1000)) d alfa beta))
+			((= p 1) (maxState mat (cdr listapoteza) (cons (car listaPoteza) (list -1000)) d alfa beta))
+			('t (minState mat (cdr listapoteza) (cons (car listaPoteza) (list 1000)) d alfa beta))
 		)
 	)
 )
@@ -760,7 +760,7 @@
 			(let*
 				(
 					(novaMat (newState mat (car listpot)))
-					(currPV (list (car listPot ) (cadr (alphaBeta (car listPot) novaMat 2 (1- d) alfa beta))))
+					(currPV (alphaBeta (car listPot) novaMat 2 (1- d) alfa beta))
 				)
 				(cond
 					((< beta (1- alfa)) maxPV)
@@ -780,7 +780,7 @@
 			(let*
 				(
 					(novaMat (newState mat (car listpot))) 
-                                        (currPV (list (car listPot ) (cadr (alphaBeta (car listPot) novaMat 1 (1- d) alfa beta))))
+					(currPV (alphaBeta (car listPot) novaMat 1 (1- d) alfa beta))
 				)
 				(cond
 					((< beta (1- alfa)) minPV)
