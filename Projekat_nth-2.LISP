@@ -56,13 +56,14 @@
 			(move
 				(if (= currP 1)
 					(promptForTurn currP '() mat)
-					(let*
-						(
-							(allMoves (getMoveList mat currP))
-							(numOfMoves (length allMoves))
-						)
-						(nth (random numOfMoves) allMoves)
-					)
+					(caar (alphaBeta '() mat currP 1 -1001 1001))
+					;(let*
+					;	(
+					;		(allMoves (getMoveList mat currP))
+					;		(numOfMoves (length allMoves))
+					;	)
+					;	(nth (random numOfMoves) allMoves)
+					;)
 				)
 			)
 			(matrix (sandwich (caadr move) (cadadr move) currP nextP (playTurn mat move)))
@@ -71,7 +72,7 @@
 			((isWin (caadr move) (cadadr move) currP matrix (getN matrix))
 				(showMatrix (getN matrix) matrix)
 				(format t "~%~a je pobedio!" (getLetter currP))
-			) 
+			)
 			('t (gamePlay (setP matrix nextP)))
 		)
 	)
@@ -693,7 +694,7 @@
 (defun verticalMoves (pos prev p mat direction)
 	(cond
 		((or (< (car pos) 0) (< (cadr pos) 0)) '())
-		((= direction 0) 
+		((= direction 0)
 			(append
 				(verticalMoves (list (1- (car pos)) (cadr pos)) prev p mat 1)
 				(verticalMoves (list (1+ (car pos)) (cadr pos)) prev p mat -1)
@@ -736,5 +737,72 @@
 	(let*
 		((currP (getP mat)) (nextP (logxor currP 3)))
 		(setP (sandwich (caadr move) (cadadr move) currP nextP (playTurn mat move)) nextP)
+	)
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun alphaBeta (pot mat p d alfa beta put)
+	(let
+		(
+			(listaPoteza (getMoveList mat p))
+			(nastavakPuta (list (cons (car listaPoteza) (list 0))))
+		)
+		(cond
+			((or (null listaPoteza) (zerop d)) (append put (list (evaluate pot mat p))))
+			((= p 1) (maxState mat (cdr listapoteza) (cons (car listaPoteza) (list -1000)) d alfa beta (append put nastavakPuta)))
+			('t (minState mat (cdr listapoteza) (cons (car listaPoteza) (list 1000)) d alfa beta (append put nastavakPuta)))
+		)
+	)
+)
+
+(defun maxState (mat listPot maxPV d alfa beta put)
+	(cond
+		((null listPot) (append put (list maxPV)))
+		('t
+			(let*
+				(
+					(novaMat (newState mat (car listpot)))
+					(currPV (alphaBeta (car listPot) novaMat 2 (1- d) alfa beta (append put (list currPV))))
+				)
+				(cond
+					((< beta (1- alfa)) maxPV)
+					((> (cadr currPV) alfa)  (maxState mat (cdr listPot) currPV d (cadr currPV) beta put))
+					((> (cadr currPV) (cadr maxPV)) (maxState mat (cdr listPot) currPV d alfa beta put))
+					('t (maxState novaMat (cdr listPot) maxPV d alfa beta put))
+				)
+			)
+		)
+	)
+)
+
+(defun minState (mat listPot minPV d alfa beta put)
+	(cond
+		((null listPot) (append put (list minPV)))
+		('t
+			(let*
+				(
+					(novaMat (newState mat (car listpot))) 
+					(currPV (alphaBeta (car listPot) novaMat 1 (1- d) alfa beta (append put (list currPV))))
+				)
+				(cond
+					((< beta (1- alfa)) minPV)
+					((< (cadr currPV) beta) (minState mat (cdr listPot) currPV d alfa (cadr currPV) put))
+					((< (cadr currPV) (cadr minPV)) (minState mat (cdr listPot) currPV d alfa beta put))
+					('t (minState novaMat (cdr listPot) minPV d alfa beta put))
+				)
+			)
+		)
+	)
+)
+
+(defun evaluate (pot mat p)
+	(let
+		((rez (isWin (caar pot) (cadar pot) p mat (getN mat))))
+		(cond
+			((and (= p 1) rez) (cons pot (list 999)))
+			((and (= p 2) rez) (cons pot (list -999)))
+			('t (cons pot (list 0)))
+		)
 	)
 )

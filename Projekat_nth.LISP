@@ -56,13 +56,14 @@
 			(move
 				(if (= currP 1)
 					(promptForTurn currP '() mat)
-					(let*
-						(
-							(allMoves (getMoveList mat currP))
-							(numOfMoves (length allMoves))
-						)
-						(nth (random numOfMoves) allMoves)
-					)
+					(car (alphaBeta '() mat currP 1 -1001 1001))
+					;(let*
+					;	(
+					;		(allMoves (getMoveList mat currP))
+					;		(numOfMoves (length allMoves))
+					;	)
+					;	(nth (random numOfMoves) allMoves)
+					;)
 				)
 			)
 			(matrix (sandwich (caadr move) (cadadr move) currP nextP (playTurn mat move)))
@@ -71,7 +72,7 @@
 			((isWin (caadr move) (cadadr move) currP matrix (getN matrix))
 				(showMatrix (getN matrix) matrix)
 				(format t "~%~a je pobedio!" (getLetter currP))
-			) 
+			)
 			('t (gamePlay (setP matrix nextP)))
 		)
 	)
@@ -693,7 +694,7 @@
 (defun verticalMoves (pos prev p mat direction)
 	(cond
 		((or (< (car pos) 0) (< (cadr pos) 0)) '())
-		((= direction 0) 
+		((= direction 0)
 			(append
 				(verticalMoves (list (1- (car pos)) (cadr pos)) prev p mat 1)
 				(verticalMoves (list (1+ (car pos)) (cadr pos)) prev p mat -1)
@@ -739,55 +740,66 @@
 	)
 )
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun Alpha-Beta(pot mat p d al be)
-  (let ((listaPoteza (getMoveList mat p)))
-    (cond ((zerop d) (evaluate pot mat p))
-          ((= p 1) (max-State mat listapoteza -1000 d al be))
-          ('t (min-State mat listapoteza 1000 d al be))
-          
-     )
-
-
-    )
-  
+(defun alphaBeta (pot mat p d alfa beta)
+	(let
+		((listaPoteza (getMoveList mat p)))
+		(cond
+			((or (null listaPoteza) (zerop d)) (evaluate pot mat p))
+			((= p 1) (maxState mat (cdr listapoteza) (cons (car listaPoteza) (list -1000)) d alfa beta))
+			('t (minState mat (cdr listapoteza) (cons (car listaPoteza) (list 1000)) d alfa beta))
+		)
+	)
 )
 
+(defun maxState (mat listPot maxPV d alfa beta)
+	(cond
+		((null listPot) maxPV)
+		('t
+			(let*
+				(
+					(novaMat (newState mat (car listpot)))
+					(currPV (alphaBeta (car listPot) novaMat 2 (1- d) alfa beta))
+				)
+				(cond
+					((< beta (1- alfa)) maxPV)
+					((> (cadr currPV) alfa)  (maxState mat (cdr listPot) currPV d (cadr currPV) beta))
+					((> (cadr currPV) (cadr maxPV)) (maxState mat (cdr listPot) currPV d alfa beta))
+					('t (maxState novaMat (cdr listPot) maxPV d alfa beta))
+				)
+			)
+		)
+	)
+)
 
-
-(defun max-State(mat listPot maxpv d alp bet)
-  (cond ((null listPot) maxpv)
-        ('t (let* ((novaMat (newState mat (car listpot))) (nv (Alpha-Beta (car listPot) novaMat 2 (1- d) alp bet)))
-              (cond ((< bet (alp-1)) maxpv)
-                     ((> nv alp)  (max-State mat (cdr listPot) nv d nv bet))
-                    ((> nv maxpv) (max-State mat (cdr listPot) nv d alp bet))
-                    ('t (max-State novaMat (cdr listPot) maxpv d alp bet))
-              
-
-              ))
-
-)))
-
-
-
-(defun min-State(mat listPot minpv d alp bet)
-  (cond ((null listPot) minpv)
-        ('t (let* ((novaMat (newState mat (car listpot))) (nv (Alpha-Beta (car listPot) novaMat 1 (1- d) alp bet)))
-              (cond ((< bet (alp-1)) minpv)
-                    ((< nv bet) (min-State mat (cdr listPot) nv d alp nv))
-                    ((< nv minpv) (min-State mat (cdr listPot) nv d alp bet))
-                    ('t (min-State novaMat (cdr listPot) minpv d alp bet))
-              
-
-              ))
-
-)))
-
+(defun minState (mat listPot minPV d alfa beta)
+	(cond
+		((null listPot) minPV)
+		('t
+			(let*
+				(
+					(novaMat (newState mat (car listpot))) 
+					(currPV (alphaBeta (car listPot) novaMat 1 (1- d) alfa beta))
+				)
+				(cond
+					((< beta (1- alfa)) minPV)
+					((< (cadr currPV) beta) (minState mat (cdr listPot) currPV d alfa (cadr currPV)))
+					((< (cadr currPV) (cadr minPV)) (minState mat (cdr listPot) currPV d alfa beta))
+					('t (minState novaMat (cdr listPot) minPV d alfa beta))
+				)
+			)
+		)
+	)
+)
 
 (defun evaluate (pot mat p)
-  (let ((rez (isWin  (car pot) (cdr (car pot)) p mat (getN mat))))
-    (cond ((and (= p 1)(res)) 999)
-          ((and (= p 2)(res)) -999)
-          ('t 0)
+	(let
+		((rez (isWin (caar pot) (cadar pot) p mat (getN mat))))
+		(cond
+			((and (= p 1) rez) (cons pot (list 999)))
+			((and (= p 2) rez) (cons pot (list -999)))
+			('t (cons pot (list 0)))
+		)
+	)
 )
-))
