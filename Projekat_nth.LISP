@@ -56,7 +56,18 @@
 			(move
 				(if (= currP 1)
 					(promptForTurn currP '() mat)
+<<<<<<< HEAD
+					(car (alphaBeta '() mat currP 3 -1001 1001 (getN mat)))
+					;(let*
+					;	(
+					;		(allMoves (getMoveList mat currP))
+					;		(numOfMoves (length allMoves))
+					;	)
+					;	(nth (random numOfMoves) allMoves)
+					;)
+=======
 					(car (alphaBeta '() mat currP 3 -1001 1001))
+>>>>>>> e9fd7d457c4b45e15a68275ef4c1c266432b0694
 				)
 			)
 			(matrix (sandwich (caadr move) (cadadr move) currP nextP (playTurn mat move)))
@@ -597,9 +608,9 @@
 
 ;funkcija koja vraca sve moguce poteze za datu tablu i igraca koji je na potezu
 ;prvo nalazi pozicije svih figura tog igraca, a zatim nalazi moguce poteze iz njih pozivajuci funkciju getPossibleMoves
-(defun getMoveList (mat p)
+(defun getMoveList (mat p N)
 	(let
-		((positions (getAllFigurePositions mat p 0)))
+		((positions (getAllFigurePositions mat p 0 N)))
 		(getPossibleMoves mat p positions)
 	)
 )
@@ -709,19 +720,19 @@
 )
 
 ;funkcija koja nalazi pozicije svih figura igraca p, i je pomocni indeks koji ide od 0
-(defun getAllFigurePositions (mat p i)
+(defun getAllFigurePositions (mat p i N)
 	(cond
-		((< (getN mat) i) '())
-		('t (append (getAllFigurePositions mat p (1+ i)) (getAllFigurePositionsV mat (nth i (car mat)) p i 0)))
+		((< N i) '())
+		('t (append (getAllFigurePositions mat p (1+ i) N) (getAllFigurePositionsV mat (nth i (car mat)) p i 0 N)))
 	)
 )
 
 ;pomocna funkcija za nalazenje pozicija svih figura igraca p, obradjuje jednu vrstu
-(defun getAllFigurePositionsV (mat col p i j)
+(defun getAllFigurePositionsV (mat col p i j N)
 	(cond
-		((< (getN mat) j) '())
-		((equal (getValue i j mat) p) (cons (list i j) (getAllFigurePositionsV mat col p i (1+ j))))
-		('t (getAllFigurePositionsV mat col p i (1+ j)))
+		((< N j) '())
+		((equal (getValue i j mat) p) (cons (list i j) (getAllFigurePositionsV mat col p i (1+ j) N)))
+		('t (getAllFigurePositionsV mat col p i (1+ j) N))
 	)
 )
 
@@ -733,29 +744,54 @@
 	)
 )
 
+<<<<<<< HEAD
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun alphaBeta (pot mat p d alfa beta N)
+=======
 ;osnova alfa-beta algoritma, nalazi moguce poteze za trenutno stanje i zapocinje obradu u zavisnosti od igraca na potezu (min ili max)
 ;pot sluzi za pozive alphaBeta iz funkcija minState/maxState, on se vraca ako je dubina 0, ili ako nema vise poteza
 (defun alphaBeta (pot mat p dubina alfa beta)
+>>>>>>> e9fd7d457c4b45e15a68275ef4c1c266432b0694
 	(let
-		((listaPoteza (getMoveList mat p)))
+		((listaPoteza (getMoveList mat p N)))
 		(cond
+<<<<<<< HEAD
+			((or (null listaPoteza) (zerop d)) (evaluate pot mat p N))
+			((= p 1) (maxState mat listapoteza (cons (car listaPoteza) (list -1000)) d alfa beta N))
+			('t (minState mat listapoteza (cons (car listaPoteza) (list 1000)) d alfa beta N))
+=======
 			((or (null listaPoteza) (zerop dubina)) (evaluate pot mat p))
 			((= p 1) (maxState mat listapoteza (cons (car listaPoteza) (list -1000)) dubina alfa beta))
 			('t (minState mat listapoteza (cons (car listaPoteza) (list 1000)) dubina alfa beta))
+>>>>>>> e9fd7d457c4b45e15a68275ef4c1c266432b0694
 		)
 	)
 )
 
+<<<<<<< HEAD
+(defun maxState (mat listPot maxPV d alfa beta N)
+=======
 ;funkcija maksimizujuceg igraca (to je u nasem slucaju 1/X), kreira novo stanje na osnovu poteza i ponovo zove alphaBeta nad njim
 ;za odredjeni nivo stabla predstavljen listom poteza listPot nalazi cvor sa maksimalnom isplativoscu maxPV
 ;ispituje ima li odsecanja, ima li nove vrednosti alfa, kao i ima li nove maksimalne vrednosti
 (defun maxState (mat listPot maxPV dubina alfa beta)
+>>>>>>> e9fd7d457c4b45e15a68275ef4c1c266432b0694
 	(cond
 		((null listPot) maxPV)
 		('t
 			(let*
 				(
 					(novaMat (newState mat (car listpot)))
+<<<<<<< HEAD
+					(currPV (list (car listPot ) (cadr (alphaBeta (car listPot) novaMat 2 (1- d) alfa beta N))))
+				)
+				(cond
+					((< beta (1- alfa)) maxPV)
+					((> (cadr currPV) alfa)  (maxState mat (cdr listPot) currPV d (cadr currPV) beta N))
+					((> (cadr currPV) (cadr maxPV)) (maxState mat (cdr listPot) currPV d alfa beta N))
+					('t (maxState novaMat (cdr listPot) maxPV d alfa beta N))
+=======
 					(currPV (list (car listPot) (cadr (alphaBeta (car listPot) novaMat 2 (1- dubina) alfa beta))))
 				)
 				(cond
@@ -763,21 +799,36 @@
 					((> (cadr currPV) alfa)  (maxState mat (cdr listPot) currPV dubina (cadr currPV) beta))
 					((> (cadr currPV) (cadr maxPV)) (maxState mat (cdr listPot) currPV dubina alfa beta))
 					('t (maxState novaMat (cdr listPot) maxPV dubina alfa beta))
+>>>>>>> e9fd7d457c4b45e15a68275ef4c1c266432b0694
 				)
 			)
 		)
 	)
 )
 
+<<<<<<< HEAD
+(defun minState (mat listPot minPV d alfa beta N)
+=======
 ;funkcija minimizujuceg igraca (to je u nasem slucaju 2/O), kreira novo stanje na osnovu poteza i ponovo zove alphaBeta nad njim
 ;za odredjeni nivo stabla predstavljen listom poteza listPot nalazi cvor sa minimalnom isplativoscu minPV
 ;ispituje ima li odsecanja, ima li nove vrednosti beta, kao i ima li nove minimalne vrednosti
 (defun minState (mat listPot minPV dubina alfa beta)
+>>>>>>> e9fd7d457c4b45e15a68275ef4c1c266432b0694
 	(cond
 		((null listPot) minPV)
 		('t
 			(let*
 				(
+<<<<<<< HEAD
+					(novaMat (newState mat (car listpot))) 
+                                        (currPV (list (car listPot ) (cadr (alphaBeta (car listPot) novaMat 1 (1- d) alfa beta N))))
+				)
+				(cond
+					((< beta (1- alfa)) minPV)
+					((< (cadr currPV) beta) (minState mat (cdr listPot) currPV d alfa (cadr currPV) N))
+					((< (cadr currPV) (cadr minPV)) (minState mat (cdr listPot) currPV d alfa beta N))
+					('t (minState novaMat (cdr listPot) minPV d alfa beta N))
+=======
 					(novaMat (newState mat (car listpot)))
 					(currPV (list (car listPot) (cadr (alphaBeta (car listPot) novaMat 1 (1- dubina) alfa beta))))
 				)
@@ -786,17 +837,22 @@
 					((< (cadr currPV) beta) (minState mat (cdr listPot) currPV dubina alfa (cadr currPV)))
 					((< (cadr currPV) (cadr minPV)) (minState mat (cdr listPot) currPV dubina alfa beta))
 					('t (minState novaMat (cdr listPot) minPV dubina alfa beta))
+>>>>>>> e9fd7d457c4b45e15a68275ef4c1c266432b0694
 				)
 			)
 		)
 	)
 )
 
+<<<<<<< HEAD
+(defun evaluate (pot mat p N)
+=======
 ;funkcija koja vrsi evaluaciju stanja (poteza), vraca evaluirani potez kao (<potez> <vrednost>), gde je potez oblika ((a b) (c d))
 ;za sada se vrsi samo ispitivanje da li ima pobednika
 (defun evaluate (pot mat p)
+>>>>>>> e9fd7d457c4b45e15a68275ef4c1c266432b0694
 	(let
-		((rez (isWin (caar pot) (cadar pot) p mat (getN mat))))
+		((rez (isWin (caar pot) (cadar pot) p mat N)))
 		(cond
 			((and (= p 1) rez) (cons pot (list 999)))
 			((and (= p 2) rez) (cons pot (list -999)))
@@ -804,3 +860,4 @@
 		)
 	)
 )
+
