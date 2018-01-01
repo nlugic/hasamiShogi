@@ -755,6 +755,10 @@
 )
 
 
+
+
+
+
 ;funkcija maksimizujuceg igraca (to je u nasem slucaju 1/X), kreira novo stanje na osnovu poteza i ponovo zove alphaBeta nad njim
 ;za odredjeni nivo stabla predstavljen listom poteza listPot nalazi cvor sa maksimalnom isplativoscu maxPV
 ;ispituje ima li odsecanja, ima li nove vrednosti alfa, kao i ima li nove maksimalne vrednosti
@@ -773,10 +777,12 @@
 					((> (cadr currPV) alfa)  (maxState mat (cdr listPot) currPV d (cadr currPV) beta N))
 					((> (cadr currPV) (cadr maxPV)) (maxState mat (cdr listPot) currPV d alfa beta N))
 					('t (maxState novaMat (cdr listPot) maxPV d alfa beta N))
+                                )
 			)
 		)
 	)
 )
+
 
 
 ;funkcija minimizujuceg igraca (to je u nasem slucaju 2/O), kreira novo stanje na osnovu poteza i ponovo zove alphaBeta nad njim
@@ -796,9 +802,23 @@
 					((< (cadr currPV) beta) (minState mat (cdr listPot) currPV d alfa (cadr currPV) N))
 					((< (cadr currPV) (cadr minPV)) (minState mat (cdr listPot) currPV d alfa beta N))
 					('t (minState novaMat (cdr listPot) minPV d alfa beta N))
+                                )
 			)
 		)
 	)
+)
+
+
+(defun getEnemyOrFriend(p)
+  (cond ((= p 1) 1)
+        ('t -1)
+  )
+)
+
+(defun abs(a)
+  (cond (( < a 0) (* a -1))
+        ('t a)
+  )
 )
 
 
@@ -808,10 +828,40 @@
 	(let
 		((rez (isWin (caar pot) (cadar pot) p mat N)))
 		(cond
-			((and (= p 1) rez) (cons pot (list 999)))
-			((and (= p 2) rez) (cons pot (list -999)))
-			('t (cons pot (list 0)))
+			((and (= p 1) rez) (cons pot (list 2000)))
+			((and (= p 2) rez) (cons pot (list -2000)))
+			('t (cons pot (list (stageTwoEvaluation pot mat p N))))
 		)
 	)
 )
+
+(defun stageTwoEvaluation(pot mat p N)
+  (cond ((= p 1) (+ (getNX) (stageThreeEvaluation pot mat p N)))
+       ('t (- (getNO) (stageThreeEvaluation pot mat p N)))
+  )
+)
+
+(defun stageThreeEvaluation(pot mat p N)
+  (cond ((and (= p 1)(or (= (caadr pot) 0) ((= (caadr pot) (1- N))))) (+ (* 5 (getNX)) (stageFourEvaluation pot mat p N)))
+       ((or (= (caadr pot) 0) ((= (caadr pot) (1- N)))) (- (* 5 (getNO)) (stageFourEvaluation pot mat p N)))
+       ('t (stageFourEvaluation pot mat p N))
+  )
+)
+
+
+(defun stageFourEvaluation(pot mat p N)
+  (let
+      (
+         (x (caar pot))
+         (y (cadar pot))
+         (x1 (caadr pot))
+         (y1 (cadadr pot))
+      )
+      (cond ((and (= x x1) (=(abs (- y y1)) 2) (= (getValue x (+ y (/ (- y1 y) 2)) mat) (logxor p 3))) (+ (* 25 (getEnemyOrFriend p)) (stageFiveEvaluation pot mat p N)))
+            ((and (= y y1) (=(abs (- x x1)) 2) (= (getValue (+ x (/ (- x1 x) 2)) y mat) (logxor p 3))) (+ (* 25 (getEnemyOrFriend p)) (stageFiveEvaluation pot mat p N)))
+            ('t (stageFiveEvaluation pot mat p N))
+      )
+  )
+)
+
 
