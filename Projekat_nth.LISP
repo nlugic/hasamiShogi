@@ -835,7 +835,7 @@
 (defun stageThreeEvaluation(pot mat p N)
 	(cond
 		((and (= p 1) (or (= (caadar pot) 0) (= (caadar pot) (- N 1)))) (+ 10 (stageFourEvaluation pot mat p N)))
-		((or (= (caadar pot) 0) (= (caadar pot) (- N 1))) (+ -10 (stageFourEvaluation pot mat p N)))
+		((or (= (caadar pot) 0) (= (caadar pot) (- N 1))) (-10 (stageFourEvaluation pot mat p N)))
 		('t (stageFourEvaluation pot mat p N))
 	)
 )
@@ -847,7 +847,7 @@
 			(x (caaar pot))
 			(y (cadaar pot))
 			(x1 (caadar pot))
-			(y1 (cadadar pot))
+			(y1 (cadadr (car pot)))
 		)
 		(cond
 			((and (= x x1) (= (abs (- y y1)) 2) (= (getValue x (+ y (/ (- y1 y) 2)) mat) (logxor p 3))) (+ (* 25 (getEnemyOrFriend p)) (stageFiveEvaluation pot mat p N)))
@@ -879,14 +879,15 @@
 (defun stageFiveEvaluation(pot mat p N)
 	(let
 		(
-			(v (sumVertical (caadar pot) (cadadar pot) p mat N 0))
-			(dr (sumDiagonalRight (caadar pot) (cadadar pot) p mat n 0))
-			(dl (sumDiagonalLeft (caadar pot) (cadadar pot) p mat n 0))
-			(h)
-			(sv (sandwichNumberHorizontal (caadar pot) (cadadar pot) p (logxor p 3) mat))
-			(sh (sandwichNumberVertical (caadar pot) (cadadar pot) p (logxor p 3) mat))
+			(v (sumVertical (caadar pot) (cadadr(car pot)) p mat N 0))
+			(dr (sumDiagonalRight (caadar pot) (cadadr(car pot)) p mat n 0))
+			(dl (sumDiagonalLeft (caadar pot) (cadadr(car pot)) p mat n 0))
+			(h (sumHorizontal (caadar pot) (cadadr(car pot)) p mat N 0))
+			(sv (sandwichNumberHorizontal (caadar pot) (cadadr(car pot)) p (logxor p 3) mat))
+			(sh (sandwichNumberVertical (caadar pot) (cadadr(car pot)) p (logxor p 3) mat))
 		)
-		(* (+ (* v 55) (* dr 55) (* dl 55) (* h 50) (* sv 60) (* sh 60)) (getEnemyOrFriend p))
+		; (+ (* (+ (* v 100) (* dr 100) (* dl 100) (* sv 250) (* sh 250)) (getEnemyOrFriend p))(* (getEnemyOrFriend p) (* h -75)))
+		(+ (* v 100) (* dr 100) (* dl 100) (* sv 250) (* sh 250) (* h -75))  
 	)
 )
 
