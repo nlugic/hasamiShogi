@@ -815,11 +815,7 @@
   )
 )
 
-(defun abs(a)
-  (cond (( < a 0) (* a -1))
-        ('t a)
-  )
-)
+
 
 
 ;funkcija koja vrsi evaluaciju stanja (poteza), vraca evaluirani potez kao (<potez> <vrednost>), gde je potez oblika ((a b) (c d))
@@ -836,14 +832,14 @@
 )
 
 (defun stageTwoEvaluation(pot mat p N)
-  (cond ((= p 1) (+ (getNX) (stageThreeEvaluation pot mat p N)))
-       ('t (- (getNO) (stageThreeEvaluation pot mat p N)))
+  (cond ((= p 1) (+ (getNX mat) (stageThreeEvaluation pot mat p N)))
+       ('t (- (getNO mat) (stageThreeEvaluation pot mat p N)))
   )
 )
 
 (defun stageThreeEvaluation(pot mat p N)
-  (cond ((and (= p 1)(or (= (caadr pot) 0) ((= (caadr pot) (1- N))))) (+ (* 5 (getNX)) (stageFourEvaluation pot mat p N)))
-       ((or (= (caadr pot) 0) ((= (caadr pot) (1- N)))) (- (* 5 (getNO)) (stageFourEvaluation pot mat p N)))
+  (cond ((and (= p 1)(or (= (caadr pot) 0) (= (caadr pot) (- N 1)))) (+ (* 5 (getNX mat)) (stageFourEvaluation pot mat p N)))
+       ((or (= (caadr pot) 0) (= (caadr pot) (- N 1))) (- (* 5 (getNO mat)) (stageFourEvaluation pot mat p N)))
        ('t (stageFourEvaluation pot mat p N))
   )
 )
