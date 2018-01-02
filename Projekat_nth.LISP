@@ -769,7 +769,7 @@
 			(let*
 				(
 					(novaMat (newState mat (car listpot)))
-					(currPV (list (car listPot ) (cadr (alphaBeta (list (car listPot) (* ((GetNO mat) (GetNO novaMat)) 60) novaMat 2 (1- d) alfa beta N))))
+					(currPV (list (car listPot ) (cadr (alphaBeta (list (car listPot) (* (- (GetNO mat) (GetNO novaMat)) 60)) novaMat 2 (1- d) alfa beta N))))
 				)
 				(cond
 					((< beta (1- alfa)) maxPV)
@@ -831,14 +831,14 @@
 )
 
 (defun stageTwoEvaluation(pot mat p N)
-  (cond ((= p 1) (+ (getNX mat) (stageThreeEvaluation pot mat p N)))
+  (cond ((= p 1) (+ (* (- (getNX mat) (getNO mat)) 5) (stageThreeEvaluation pot mat p N)))
        ('t (- (getNO mat) (stageThreeEvaluation pot mat p N)))
   )
 )
 
 (defun stageThreeEvaluation(pot mat p N)
-  (cond ((and (= p 1)(or (= (caadr pot) 0) (= (caadr pot) (- N 1)))) (+ (* 5 (getNX mat)) (stageFourEvaluation pot mat p N)))
-       ((or (= (caadr pot) 0) (= (caadr pot) (- N 1))) (- (* 5 (getNO mat)) (stageFourEvaluation pot mat p N)))
+  (cond ((and (= p 1)(or (= (caadr pot) 0) (= (caadr pot) (- N 1)))) (+ 10 (stageFourEvaluation pot mat p N)))
+       ((or (= (caadr pot) 0) (= (caadr pot) (- N 1))) (- 10 (stageFourEvaluation pot mat p N)))
        ('t (stageFourEvaluation pot mat p N))
   )
 )
@@ -861,4 +861,13 @@
 
 
 (defun stageFiveEvaluation(pot mat p N)
+  (let
+     (
+        (v (sumVertical (caadr pot) (cadadr pot) p mat N 0))
+        (dr (sumDiagonalRight (caadr pot) (cadadr pot) p mat n 0))
+        (dl (sumDiagonalLeft (caadr pot) (cadadr pot) p mat n 0))
+        (h)
+     )
+    (* (+ (* v 55) (* dr 55) (* dl 55) (* h 50)) (getEnemyOrFriend p))
+  )
 )
