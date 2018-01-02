@@ -867,7 +867,38 @@
         (dr (sumDiagonalRight (caadr pot) (cadadr pot) p mat n 0))
         (dl (sumDiagonalLeft (caadr pot) (cadadr pot) p mat n 0))
         (h)
+        (sv (sandwichNumberHorizontal (caadr pot) (cadadr pot) p (logxor p 3) mat))
+        (sh (sandwichNumberVertical (caadr pot) (cadadr pot) p (logxor p 3) mat))
      )
-    (* (+ (* v 55) (* dr 55) (* dl 55) (* h 50)) (getEnemyOrFriend p))
+    (* (+ (* v 55) (* dr 55) (* dl 55) (* h 50) (* sv 60) (* sh 60)) (getEnemyOrFriend p))
   )
+)
+
+
+
+(defun sandwichNumberHorizontal (i j player1 player2 mat)
+	(let
+		(
+			(x (isSandwichHorizontal i j player1 player2 mat 0))
+		)
+		(cond 
+			((or (null (car x)) (null (cadr x)))  '0)
+                         ((and (not (null (car x))) (not (null (cadr x))))  (- (cadr x) (car x) '1))
+                  )
+            )
+
+)
+
+
+(defun sandwichNumberVertical (i j player1 player2 mat)
+	(let
+		(
+			(y (isSandwichVertical i j player1 player2 mat 0))
+		)
+		(cond 
+			((or (null (car y)) (null (cadr y)))  '0)
+                         ((and (not (null (car y))) (not (null (cadr y))))  (- (cadr y) (car y) '1))
+                  )
+            )
+
 )
