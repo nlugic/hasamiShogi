@@ -753,11 +753,6 @@
 	)
 )
 
-
-
-
-
-
 ;funkcija maksimizujuceg igraca (to je u nasem slucaju 1/X), kreira novo stanje na osnovu poteza i ponovo zove alphaBeta nad njim
 ;za odredjeni nivo stabla predstavljen listom poteza listPot nalazi cvor sa maksimalnom isplativoscu maxPV
 ;ispituje ima li odsecanja, ima li nove vrednosti alfa, kao i ima li nove maksimalne vrednosti
@@ -782,8 +777,6 @@
 	)
 )
 
-
-
 ;funkcija minimizujuceg igraca (to je u nasem slucaju 2/O), kreira novo stanje na osnovu poteza i ponovo zove alphaBeta nad njim
 ;za odredjeni nivo stabla predstavljen listom poteza listPot nalazi cvor sa minimalnom isplativoscu minPV
 ;ispituje ima li odsecanja, ima li nove vrednosti beta, kao i ima li nove minimalne vrednosti
@@ -807,15 +800,12 @@
 	)
 )
 
-
-(defun getEnemyOrFriend(p)
-  (cond ((= p 1) 1)
-        ('t -1)
-  )
+(defun getEnemyOrFriend (p)
+	(cond
+		((= p 1) 1)
+		('t -1)
+	)
 )
-
-
-
 
 ;funkcija koja vrsi evaluaciju stanja (poteza), vraca evaluirani potez kao (<potez> <vrednost>), gde je potez oblika ((a b) (c d))
 ;za sada se vrsi samo ispitivanje da li ima pobednika
@@ -830,35 +820,60 @@
 	)
 )
 
+(defun figuresValue (mat)
+	(* 5 (- (getNX mat) (getNO mat)))
+)
+
 (defun stageTwoEvaluation(pot mat p N)
-  (cond ((= p 1) (+ (getNX mat) (stageThreeEvaluation pot mat p N)))
-       ('t (- (getNO mat) (stageThreeEvaluation pot mat p N)))
-  )
+	(+ (figuresValue mat) (stageThreeEvaluation pot mat p N))
+	;(cond
+	;	((= p 1) (+ (getNX mat) (stageThreeEvaluation pot mat p N)))
+	;	('t (- (getNO mat) (stageThreeEvaluation pot mat p N)))
+	;)
 )
 
 (defun stageThreeEvaluation(pot mat p N)
-  (cond ((and (= p 1)(or (= (caadr pot) 0) (= (caadr pot) (- N 1)))) (+ (* 5 (getNX mat)) (stageFourEvaluation pot mat p N)))
-       ((or (= (caadr pot) 0) (= (caadr pot) (- N 1))) (- (* 5 (getNO mat)) (stageFourEvaluation pot mat p N)))
-       ('t (stageFourEvaluation pot mat p N))
-  )
+	(cond
+		((and (= p 1) (or (= (caadr pot) 0) (= (caadr pot) (- N 1)))) (+ 10 (stageFourEvaluation pot mat p N)))
+		((or (= (caadr pot) 0) (= (caadr pot) (- N 1))) (+ -10 (stageFourEvaluation pot mat p N)))
+		('t (stageFourEvaluation pot mat p N))
+	)
 )
-
 
 (defun stageFourEvaluation(pot mat p N)
-  (let
-      (
-         (x (caar pot))
-         (y (cadar pot))
-         (x1 (caadr pot))
-         (y1 (cadadr pot))
-      )
-      (cond ((and (= x x1) (=(abs (- y y1)) 2) (= (getValue x (+ y (/ (- y1 y) 2)) mat) (logxor p 3))) (+ (* 25 (getEnemyOrFriend p)) (stageFiveEvaluation pot mat p N)))
-            ((and (= y y1) (=(abs (- x x1)) 2) (= (getValue (+ x (/ (- x1 x) 2)) y mat) (logxor p 3))) (+ (* 25 (getEnemyOrFriend p)) (stageFiveEvaluation pot mat p N)))
-            ('t (stageFiveEvaluation pot mat p N))
-      )
-  )
+	(let
+		(
+			(x (caar pot))
+			(y (cadar pot))
+			(x1 (caadr pot))
+			(y1 (cadadr pot))
+		)
+		(cond
+			((and (= x x1) (= (abs (- y y1)) 2) (= (getValue x (+ y (/ (- y1 y) 2)) mat) (logxor p 3))) (+ (* 25 (getEnemyOrFriend p)) (stageFiveEvaluation pot mat p N)))
+			((and (= y y1) (= (abs (- x x1)) 2) (= (getValue (+ x (/ (- x1 x) 2)) y mat) (logxor p 3))) (+ (* 25 (getEnemyOrFriend p)) (stageFiveEvaluation pot mat p N)))
+			('t (stageFiveEvaluation pot mat p N))
+		)
+	)
 )
 
+(defun sumHorizontal (i j p mat n direction)
+	(cond
+		((or (< i 0) (< j 0)) 0)
+		((= direction 0) (+ 1 (sumHorizontal i (1+ j) player mat n -1) (sumHorizontal i (1- j) player mat n 1)))
+		((< direction 0)
+			(cond
+				((and (equal (getValue i j mat) player) (notInOwnField i  player n)) (+ (sumHorizontal i (1+ j) player mat n -1) 1))
+				('t 0)
+			)
+		)
+		('t
+			(cond
+				((and (equal (getValue i j mat) player) (notInOwnField i  player n)) (+ (sumHorizontal i (1- j) player mat n 1) 1))
+				('t 0)
+			)
+		)
+	)
+)
 
 (defun stageFiveEvaluation(pot mat p N)
 )
