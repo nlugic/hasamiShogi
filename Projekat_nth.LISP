@@ -753,6 +753,11 @@
 	)
 )
 
+
+
+
+
+
 ;funkcija maksimizujuceg igraca (to je u nasem slucaju 1/X), kreira novo stanje na osnovu poteza i ponovo zove alphaBeta nad njim
 ;za odredjeni nivo stabla predstavljen listom poteza listPot nalazi cvor sa maksimalnom isplativoscu maxPV
 ;ispituje ima li odsecanja, ima li nove vrednosti alfa, kao i ima li nove maksimalne vrednosti
@@ -764,7 +769,7 @@
 			(let*
 				(
 					(novaMat (newState mat (car listpot)))
-					(currPV (list (car listPot ) (cadr (alphaBeta (list (car listPot) (* ((GetNO mat) (GetNO novaMat)) 60) novaMat 2 (1- d) alfa beta N))))
+					(currPV (list (car listPot ) (cadr (alphaBeta (list (car listPot) (* (- (GetNO mat) (GetNO novaMat)) 60)) novaMat 2 (1- d) alfa beta N))))
 				)
 				(cond
 					((< beta (1- alfa)) maxPV)
@@ -776,6 +781,8 @@
 		)
 	)
 )
+
+
 
 ;funkcija minimizujuceg igraca (to je u nasem slucaju 2/O), kreira novo stanje na osnovu poteza i ponovo zove alphaBeta nad njim
 ;za odredjeni nivo stabla predstavljen listom poteza listPot nalazi cvor sa minimalnom isplativoscu minPV
@@ -806,6 +813,9 @@
 		('t -1)
 	)
 )
+
+
+
 
 ;funkcija koja vrsi evaluaciju stanja (poteza), vraca evaluirani potez kao (<potez> <vrednost>), gde je potez oblika ((a b) (c d))
 ;za sada se vrsi samo ispitivanje da li ima pobednika
@@ -839,6 +849,7 @@
 		('t (stageFourEvaluation pot mat p N))
 	)
 )
+
 
 (defun stageFourEvaluation(pot mat p N)
 	(let
@@ -876,4 +887,44 @@
 )
 
 (defun stageFiveEvaluation(pot mat p N)
+  (let
+     (
+        (v (sumVertical (caadr pot) (cadadr pot) p mat N 0))
+        (dr (sumDiagonalRight (caadr pot) (cadadr pot) p mat n 0))
+        (dl (sumDiagonalLeft (caadr pot) (cadadr pot) p mat n 0))
+        (h)
+        (sv (sandwichNumberHorizontal (caadr pot) (cadadr pot) p (logxor p 3) mat))
+        (sh (sandwichNumberVertical (caadr pot) (cadadr pot) p (logxor p 3) mat))
+     )
+    (* (+ (* v 55) (* dr 55) (* dl 55) (* h 50) (* sv 60) (* sh 60)) (getEnemyOrFriend p))
+  )
+)
+
+
+
+(defun sandwichNumberHorizontal (i j player1 player2 mat)
+	(let
+		(
+			(x (isSandwichHorizontal i j player1 player2 mat 0))
+		)
+		(cond 
+			((or (null (car x)) (null (cadr x)))  '0)
+                         ((and (not (null (car x))) (not (null (cadr x))))  (- (cadr x) (car x) '1))
+                  )
+            )
+
+)
+
+
+(defun sandwichNumberVertical (i j player1 player2 mat)
+	(let
+		(
+			(y (isSandwichVertical i j player1 player2 mat 0))
+		)
+		(cond 
+			((or (null (car y)) (null (cadr y)))  '0)
+                         ((and (not (null (car y))) (not (null (cadr y))))  (- (cadr y) (car y) '1))
+                  )
+            )
+
 )
