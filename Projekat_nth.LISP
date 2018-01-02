@@ -740,7 +740,6 @@
 	)
 )
 
-
 ;osnova alfa-beta algoritma, nalazi moguce poteze za trenutno stanje i zapocinje obradu u zavisnosti od igraca na potezu (min ili max)
 ;pot sluzi za pozive alphaBeta iz funkcija minState/maxState, on se vraca ako je dubina 0, ili ako nema vise poteza
 (defun alphaBeta (pot mat p d alfa beta N)
@@ -770,7 +769,7 @@
 			(let*
 				(
 					(novaMat (newState mat (car listpot)))
-					(currPV (list (car listPot ) (cadr (alphaBeta (car listPot) novaMat 2 (1- d) alfa beta N))))
+					(currPV (list (car listPot ) (cadr (alphaBeta (list (car listPot) (* ((GetNO mat) (GetNO novaMat)) 60) novaMat 2 (1- d) alfa beta N))))
 				)
 				(cond
 					((< beta (1- alfa)) maxPV)
@@ -795,7 +794,7 @@
 			(let*
 				(
 					(novaMat (newState mat (car listpot))) 
-                                        (currPV (list (car listPot ) (cadr (alphaBeta (car listPot) novaMat 1 (1- d) alfa beta N))))
+                                        (currPV (list (car listPot ) (cadr (alphaBeta (list (car listPot) (* (- (GetNX mat) (GetNX novaMat)) 60 -1)) novaMat 1 (1- d) alfa beta N))))
 				)
 				(cond
 					((< beta (1- alfa)) minPV)
@@ -826,7 +825,7 @@
 		(cond
 			((and (= p 1) rez) (cons pot (list 2000)))
 			((and (= p 2) rez) (cons pot (list -2000)))
-			('t (cons pot (list (stageTwoEvaluation pot mat p N))))
+			('t (cons (car pot) (lista (+ (cadr pot) (stageTwoEvaluation pot mat p N)))))
 		)
 	)
 )
@@ -861,3 +860,5 @@
 )
 
 
+(defun stageFiveEvaluation(pot mat p N)
+)
