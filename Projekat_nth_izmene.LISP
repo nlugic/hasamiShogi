@@ -749,8 +749,8 @@
 		((listaPoteza (getMoveList mat p N)))
 		(cond
 			((or (null listaPoteza) (zerop d)) (evaluateState pot mat p N))
-			((= p 1) (maxState mat listapoteza (cons (car listaPoteza) (list -1000)) d alfa beta N))
-			('t (minState mat listapoteza (cons (car listaPoteza) (list 1000)) d alfa beta N))
+			((= p 1) (maxState mat listapoteza (cons (car listaPoteza) (list 0)) d alfa beta N))
+			('t (minState mat listapoteza (cons (car listaPoteza) (list 0)) d alfa beta N))
 		)
 	)
 )
@@ -759,7 +759,6 @@
 ;za odredjeni nivo stabla predstavljen listom poteza listPot nalazi cvor sa maksimalnom isplativoscu maxPV
 ;ispituje ima li odsecanja, ima li nove vrednosti alfa, kao i ima li nove maksimalne vrednosti
 (defun maxState (mat listPot maxPV d alfa beta N)
-
 	(cond
 		((null listPot) maxPV)
 		('t
@@ -769,7 +768,7 @@
 					(currPV (list (car listPot ) (cadr (alphaBeta (list (car listPot) 0) novaMat 2 (1- d) alfa beta N))))
 				)
 				(cond
-					((< beta (1- alfa)) maxPV)
+					((<= beta alfa) maxPV)
 					((> (cadr currPV) alfa)  (maxState mat (cdr listPot) currPV d (cadr currPV) beta N))
 					((> (cadr currPV) (cadr maxPV)) (maxState mat (cdr listPot) currPV d alfa beta N))
 					('t (maxState novaMat (cdr listPot) maxPV d alfa beta N))
@@ -792,7 +791,7 @@
 					(currPV (list (car listPot) (cadr (alphaBeta (list (car listPot) 0) novaMat 1 (1- d) alfa beta N))))
 				)
 				(cond
-					((< beta (1- alfa)) minPV)
+					((<= beta alfa) minPV)
 					((< (cadr currPV) beta) (minState mat (cdr listPot) currPV d alfa (cadr currPV) N))
 					((< (cadr currPV) (cadr minPV)) (minState mat (cdr listPot) currPV d alfa beta N))
 					('t (minState novaMat (cdr listPot) minPV d alfa beta N))
