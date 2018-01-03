@@ -340,7 +340,9 @@
 
 ;vraca vrednost polja table sa koordinatama (i, j)
 (defun getValue (i j mat)
-	(nth j (nth i (car mat)))
+  (cond ((or (< i 0) (< j 0)) ())
+	('t (nth j (nth i (car mat))))
+  )
 )
 
 ;resetuje vrednost polja table na poziciji pos
@@ -853,6 +855,7 @@
 					(currValue (getValue currI currJ mat))
 				)
 				(cond
+                                        ((null currValue) 0)
 					((= currValue p) 1)
 					((zerop currValue) (threatAnalyze mat currI currJ p N hDir vDir))
 					('t 0)
@@ -873,6 +876,7 @@
 					(currValue (getValue i currJ mat))
 				)
 				(cond
+                                        ((null currValue) 0)
 					((= currValue p) (horSandwichThreatCount mat i currJ p N direction))
 					((zerop currValue) (threatAnalyze mat i currJ (logxor p 3) N 0 0))
 					('t 0)
@@ -893,6 +897,7 @@
 					(currValue (getValue currI j mat))
 				)
 				(cond
+                                        ((null currValue) 0)
 					((= currValue p) (vertSandwichThreatCount mat currI j p N direction))
 					((zerop currValue) (threatAnalyze mat currI j (logxor p 3) N 0 0))
 					('t 0)
