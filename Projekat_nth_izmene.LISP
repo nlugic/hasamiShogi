@@ -749,8 +749,8 @@
 		((listaPoteza (getMoveList mat p N)))
 		(cond
 			((or (null listaPoteza) (zerop d)) (evaluateState pot mat p N))
-			((= p 1) (maxState mat listapoteza (cons (car listaPoteza) (list 0)) d alfa beta N))
-			('t (minState mat listapoteza (cons (car listaPoteza) (list 0)) d alfa beta N))
+			((= p 1) (maxState mat listapoteza (cons (car listaPoteza) (list -5000)) d alfa beta N))
+			('t (minState mat listapoteza (cons (car listaPoteza) (list 5000)) d alfa beta N))
 		)
 	)
 )
