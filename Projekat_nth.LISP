@@ -746,7 +746,7 @@
 	(let
 		((listaPoteza (getMoveList mat p N)))
 		(cond
-			((or (null listaPoteza) (zerop d)) (evaluate pot mat p N))
+			((or (null listaPoteza) (zerop d)) (evaluateState pot mat p N))
 			((= p 1) (maxState mat listapoteza (cons (car listaPoteza) (list -1000)) d alfa beta N))
 			('t (minState mat listapoteza (cons (car listaPoteza) (list 1000)) d alfa beta N))
 		)
@@ -764,14 +764,14 @@
 			(let*
 				(
 					(novaMat (newState mat (car listpot)))
-					(currPV (list (car listPot ) (cadr (alphaBeta (list (car listPot) (* (- (GetNO mat) (GetNO novaMat)) 60)) novaMat 2 (1- d) alfa beta N))))
+					(currPV (list (car listPot ) (cadr (alphaBeta (list (car listPot) 0) novaMat 2 (1- d) alfa beta N))))
 				)
 				(cond
 					((< beta (1- alfa)) maxPV)
 					((> (cadr currPV) alfa)  (maxState mat (cdr listPot) currPV d (cadr currPV) beta N))
 					((> (cadr currPV) (cadr maxPV)) (maxState mat (cdr listPot) currPV d alfa beta N))
 					('t (maxState novaMat (cdr listPot) maxPV d alfa beta N))
-                                )
+				)
 			)
 		)
 	)
@@ -787,72 +787,28 @@
 			(let*
 				(
 					(novaMat (newState mat (car listpot))) 
-                                        (currPV (list (car listPot ) (cadr (alphaBeta (list (car listPot) (* (- (GetNX mat) (GetNX novaMat)) 60 -1)) novaMat 1 (1- d) alfa beta N))))
+					(currPV (list (car listPot) (cadr (alphaBeta (list (car listPot) 0) novaMat 1 (1- d) alfa beta N))))
 				)
 				(cond
 					((< beta (1- alfa)) minPV)
 					((< (cadr currPV) beta) (minState mat (cdr listPot) currPV d alfa (cadr currPV) N))
 					((< (cadr currPV) (cadr minPV)) (minState mat (cdr listPot) currPV d alfa beta N))
 					('t (minState novaMat (cdr listPot) minPV d alfa beta N))
-                                )
+				)
 			)
 		)
 	)
 )
 
-(defun getEnemyOrFriend (p)
-	(cond
-		((= p 1) 1)
-		('t -1)
-	)
-)
-
 ;funkcija koja vrsi evaluaciju stanja (poteza), vraca evaluirani potez kao (<potez> <vrednost>), gde je potez oblika ((a b) (c d))
 ;za sada se vrsi samo ispitivanje da li ima pobednika
-(defun evaluate (pot mat p N)
+(defun evaluateState (pot mat p N)
 	(let
 		((rez (isWin (caaar pot) (cadaar pot) p mat N)))
 		(cond
 			((and (= p 1) rez) (cons pot (list 2000)))
 			((and (= p 2) rez) (cons pot (list -2000)))
-			('t (cons (car pot) (lista (+ (cadr pot) (stageTwoEvaluation pot mat p N)))))
-		)
-	)
-)
-
-(defun figuresValue (mat)
-	(* 5 (- (getNX mat) (getNO mat)))
-)
-
-(defun stageTwoEvaluation(pot mat p N)
-	(+ (figuresValue mat) (stageThreeEvaluation pot mat p N))
-	;(cond
-	;	((= p 1) (+ (getNX mat) (stageThreeEvaluation pot mat p N)))
-	;	('t (- (getNO mat) (stageThreeEvaluation pot mat p N)))
-	;)
-)
-
-(defun stageThreeEvaluation(pot mat p N)
-	(cond
-		((and (= p 1) (or (= (caadar pot) 0) (= (caadar pot) (- N 1)))) (+ 10 (stageFourEvaluation pot mat p N)))
-		((or (= (caadar pot) 0) (= (caadar pot) (- N 1))) (-10 (stageFourEvaluation pot mat p N)))
-		('t (stageFourEvaluation pot mat p N))
-	)
-)
-
-
-(defun stageFourEvaluation(pot mat p N)
-	(let
-		(
-			(x (caaar pot))
-			(y (cadaar pot))
-			(x1 (caadar pot))
-			(y1 (cadadr (car pot)))
-		)
-		(cond
-			((and (= x x1) (= (abs (- y y1)) 2) (= (getValue x (+ y (/ (- y1 y) 2)) mat) (logxor p 3))) (+ (* 25 (getEnemyOrFriend p)) (stageFiveEvaluation pot mat p N)))
-			((and (= y y1) (= (abs (- x x1)) 2) (= (getValue (+ x (/ (- x1 x) 2)) y mat) (logxor p 3))) (+ (* 25 (getEnemyOrFriend p)) (stageFiveEvaluation pot mat p N)))
-			('t (stageFiveEvaluation pot mat p N))
+			('t (cons (car pot) (lista (+ (cadr pot) (stateEval pot mat p N)))))
 		)
 	)
 )
@@ -876,37 +832,66 @@
 	)
 )
 
-(defun stageFiveEvaluation(pot mat p N)
-	(let
-		(
-			(v (sumVertical (caadar pot) (cadadr(car pot)) p mat N 0))
-			(dr (sumDiagonalRight (caadar pot) (cadadr(car pot)) p mat n 0))
-			(dl (sumDiagonalLeft (caadar pot) (cadadr(car pot)) p mat n 0))
-			(h (sumHorizontal (caadar pot) (cadadr(car pot)) p mat N 0))
-			(sv (sandwichNumberHorizontal (caadar pot) (cadadr(car pot)) p (logxor p 3) mat))
-			(sh (sandwichNumberVertical (caadar pot) (cadadr(car pot)) p (logxor p 3) mat))
-		)
-		; (+ (* (+ (* v 100) (* dr 100) (* dl 100) (* sv 250) (* sh 250)) (getEnemyOrFriend p))(* (getEnemyOrFriend p) (* h -75)))
-		(+ (* v 100) (* dr 100) (* dl 100) (* sv 250) (* sh 250) (* h -75))  
-	)
-)
-
 (defun sandwichNumberHorizontal (i j player1 player2 mat)
-	(let
-		((x (isSandwichHorizontal i j player1 player2 mat 0)))
-		(cond 
-			((or (null (car x)) (null (cadr x)))  0)
-			((and (not (null (car x))) (not (null (cadr x))))  (- (cadr x) (car x) 1))
+	(let*
+		(
+			(x (isSandwichHorizontal i j player1 player2 mat 0))
+			(x1 (car x))
+			(x2 (cadr x))
+		)
+		(cond
+			((and (not (null x1)) (not (null x2))) (- x2 x1 1))
+			('t 0)
 		)
 	)
 )
 
 (defun sandwichNumberVertical (i j player1 player2 mat)
-	(let
-		((y (isSandwichVertical i j player1 player2 mat 0)))
-		(cond 
-			((or (null (car y)) (null (cadr y))) 0)
-			((and (not (null (car y))) (not (null (cadr y))))  (- (cadr y) (car y) 1))
+	(let*
+		(
+			(y (isSandwichVertical i j player1 player2 mat 0))
+			(y1 (car y))
+			(y2 (cadr y))
+		)
+		(cond
+			((and (not (null y1)) (not (null y2))) (- y2 y1 1))
+			('t 0)
+		)
+	)
+)
+
+(defun stateEval (pot mat p N)
+	(let*
+		(
+			(x1 (caaar pot))
+			(y1 (cadaar pot))
+			(x2 (caadar pot))
+			(y2 (cadadr (car pot)))
+			(nextP (logxor p 3))
+			(hOffset (- x2 x1))
+			(vOffset (- y2 y1))
+			(hMov (cond ((< hOffset 0) -1) ((> hOffset 0) 1) ('t 0)))
+			(vMov (cond ((< vOffset 0) -1) ((> vOffset 0) 1) ('t 0)))
+			
+			(positionEval (* (- (getNX mat) (getNO mat)) 5))
+			(edgeBonus (if (or (zerop x2) (= x2 (1- N))) 10 0))
+			(jumpBonus 
+				(cond
+					((and (= (abs vOffset) 2) (= (getValue x1 (+ y1 vMov) mat) nextP)) 30)
+					((and (= (abs hOffset) 2) (= (getValue (+ x1 hMov) y1 mat) nextP)) 30)
+					('t 0)
+				)
+			)
+			(vertBonus (* (sumVertical x2 y2 p mat N 0) 60))
+			(rightDiagBonus (* (sumDiagonalRight x2 y2 p mat N 0) 60))
+			(leftDiagBonus (* (sumDiagonalLeft x2 y2 p mat N 0) 60))
+			(horPenalty (* (sumHorizontal x2 y2 p mat N 0) -50))
+			(vertSandwichBonus (* (sandwichNumberHorizontal x2 y2 p nextP mat) 65))
+			(horSandwichBonus (* (sandwichNumberVertical x2 y2 p nextP mat) 65))
+		)
+		(if (= p 1)
+			(+ positionEval (+ edgeBonus jumpBonus vertBonus rightDiagBonus leftDiagBonus horPenalty vertSandwichBonus horSandwichBonus))
+			(- positionEval (+ edgeBonus jumpBonus vertBonus rightDiagBonus leftDiagBonus horPenalty vertSandwichBonus horSandwichBonus))
 		)
 	)
 )
