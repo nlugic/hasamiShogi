@@ -811,153 +811,118 @@
 		(cond
 			((and (= p 1) rez) (cons pot (list 3000)))
 			((and (= p 2) rez) (cons pot (list -3000)))
-			('t (cons (car pot) (list (stateEval pot mat p N))))
+			('t (cons (car pot) (list (stateEval mat N))))
 		)
 	)
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 4. FAZA ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;vraca broj uzastopnih figura igraca p po horizontali
-(defun sumHorizontal (i j p mat n direction)
+(defun sandwichCount (mat p i N)
 	(cond
-		((or (< i 0) (< j 0)) 0)
-		((= direction 0) (+ 1 (sumHorizontal i (1+ j) p mat n -1) (sumHorizontal i (1- j) p mat n 1)))
-		((< direction 0)
-			(cond
-				((and (equal (getValue i j mat) p) (notInOwnField i p n)) (+ (sumHorizontal i (1+ j) p mat n -1) 1))
-				('t 0)
-			)
-		)
-		('t
-			(cond
-				((and (equal (getValue i j mat) p) (notInOwnField i p n)) (+ (sumHorizontal i (1- j) p mat n 1) 1))
-				('t 0)
-			)
-		)
+		((< N i) 0)
+		('t (+ (sandwichCount mat p (1+ i) N) (countSandwichesInRow mat (nth i (car mat)) p i 0 N)))
 	)
 )
 
-(defun threatAnalyze (mat i j p N hDir vDir)
+(defun countSandwichesInRow (mat col p i j N)
 	(cond
-		((and (zerop hDir) (zerop vDir))
-			(+ 
-				(threatAnalyze mat i j p N -1 0) (threatAnalyze mat i j p N 1 0) 
-				(threatAnalyze mat i j p N 0 -1) (threatAnalyze mat i j p N 0 1)
-			)
-		)
+		((< N j) 0)
+		((not (zerop (getValue i j mat))) (countSandwichesInRow mat col p i (1+ j) N))
 		('t
 			(let*
 				(
-					(currI (+ i hDir))
-					(currJ (+ j vDir))
-					(currValue (getValue currI currJ mat))
+					(nextP (logxor p 3))
+					(horSandwich (isSandwichHorizontal i j p nextP mat 0))
+					(vertSandwich (isSandwichVertical i j p nextP mat 0))
+					(hSBegin (car horSandwich))
+					(hSEnd (cadr horSandwich))
+					(vSBegin (car vertSandwich))
+					(vSEnd (cadr vertSandwich))
+					(hSOpen (or (and (null hSBegin) (not (null hSEnd))) (and (not (null hSBegin)) (null hSEnd))))
+					(vSOpen (or (and (null vSBegin) (not (null vSEnd))) (and (not (null vSBegin)) (null vSEnd))))
 				)
 				(cond
-					((null currValue) 0)
-					((= currValue p) 1)
-					((zerop currValue) (threatAnalyze mat currI currJ p N hDir vDir))
-					('t 0)
+					((and hSOpen vSOpen) (+ (countSandwichesInRow mat col p i (1+ j) N) 2))
+					(hSOpen (1+ (countSandwichesInRow mat col p i (1+ j) N)))
+					(vSOpen (1+ (countSandwichesInRow mat col p i (1+ j) N)))
+					('t (countSandwichesInRow mat col p i (1+ j) N))
 				)
 			)
 		)
 	)
 )
 
-(defun horSandwichThreatCount (mat i j p N direction)
+(defun arrayCount (mat p i N)
 	(cond
-		((zerop direction) (+ (horSandwichThreatCount mat i j p N -1) (horSandwichThreatCount mat i j p N 1)))
+		((< (- N 2) i) 0)
+		('t (+ (arrayCount mat p (1+ i) N) (countArraysInRow mat (nth i (car mat)) p i 0 N)))
+	)
+)
+
+(defun countArraysInRow (mat col p i j N)
+	(cond
+		((< N j) 0)
+		((not (zerop (getValue i j mat))) (countArraysInRow mat col p i (1+ j) N))
 		('t
 			(let*
 				(
-					(currJ (+ j direction))
-					(currValue (getValue i currJ mat))
+					(vert (sumVertical i j p mat N 0))
+					(leftDiag (sumDiagonalLeft i j p mat N 0))
+					(rightDiag (sumDiagonalRight i j p mat N 0))
+					
+					(vArray (if (> vert 2) 1 0))
+					(lDArray (if (> leftDiag 2) 1 0))
+					(rDArray (if (> rightDiag 2) 1 0))
 				)
-				(cond
-					((null currValue) 0)
-					((= currValue p) (horSandwichThreatCount mat i currJ p N direction))
-					((zerop currValue) (threatAnalyze mat i currJ (logxor p 3) N 0 0))
-					('t 0)
-				)
+				(+ vArray lDArray rDArray (countArraysInRow mat col p i (1+ j) N))
 			)
 		)
 	)
 )
 
-(defun vertSandwichThreatCount (mat i j p N direction)
-	(cond
-		((zerop direction) (+ (vertSandwichThreatCount mat i j p N -1) (vertSandwichThreatCount mat i j p N 1)))
-		('t
-			(let*
-				(
-					(currI (+ i direction))
-					(currValue (getValue currI j mat))
-				)
-				(cond
-					((null currValue) 0)
-					((= currValue p) (vertSandwichThreatCount mat currI j p N direction))
-					((zerop currValue) (threatAnalyze mat currI j (logxor p 3) N 0 0))
-					('t 0)
-				)
-			)
-		)
-	)
-)
-
-;vrsi evaluaciju poteza pot koji ce biti odigran nad stanjem mat
-;uzima se u obzir broj figura oba igraca, daje se mali bonus za potez po ivici polja i za preskok
-;daje se bonus za vertikalni/dijagonalni niz, kao i kazna za horizontalni niz
-;daje se bonus za ulazak u sendvic, jer se tada sprecava protivnikovo kompletiranje sendvica
-;ali ako se uslo u otvoren niz, smanjuje se vrednost za svaku priliku protivnika da zatvori niz (napravi sendvic)
-(defun stateEval (pot mat p N)
+(defun stateEval (mat N)
 	(let*
 		(
-			(x1 (caaar pot))
-			(y1 (cadaar pot))
-			(x2 (caadar pot))
-			(y2 (cadadr (car pot)))
-			(nextP (logxor p 3))
-			(hOffset (- x2 x1))
-			(vOffset (- y2 y1))
-			(hMov (cond ((< hOffset 0) -1) ((> hOffset 0) 1) ('t 0)))
-			(vMov (cond ((< vOffset 0) -1) ((> vOffset 0) 1) ('t 0)))
+			(p1SandwichCount (sandwichCount mat 1 0 N))
+			(p2SandwichCount (sandwichCount mat 2 0 N))
 			
-			(horSandwich (isSandwichHorizontal x2 y2 p nextP mat 0))
-			(vertSandwich (isSandwichVertical x2 y2 p nextP mat 0))
-			(hSBegin (car horSandwich))
-			(hSEnd (cadr horSandwich))
-			(vSBegin (car vertSandwich))
-			(vSEnd (cadr vertSandwich))
-			(horSandwichBonus
-				(cond
-					((and (not (null hSBegin)) (not (null hSEnd))) (* (- hSEnd hSBegin 1) 150))
-					('t (* (horSandwichThreatCount mat x2 y2 p N 0) -150))
+			(p1ArrayCount (arrayCount mat 1 2 N))
+			(p2ArrayCount (arrayCount mat 2 2 N))
+			
+			(sPoz
+				(if (> p1SandwichCount p2SandwichCount)
+					(* (- p1SandwichCount p2SandwichCount) 150)
+					(* p1SandwichCount 150)
 				)
 			)
-			(vertSandwichBonus
-				(cond
-					((and (not (null vSBegin)) (not (null vSEnd))) (* (- vSEnd vSBegin 1) 150))
-					('t (* (vertSandwichThreatCount mat x2 y2 p N 0) -150))
+			(sNeg
+				(if (> p2SandwichCount p1SandwichCount)
+					(* (- p2SandwichCount p1SandwichCount) -150)
+					(* p2SandwichCount -150)
 				)
 			)
-						
-			(positionEval (* (- (getNX mat) (getNO mat)) 200))
-			(edgeBonus (if (or (zerop x2) (= x2 (1- N))) 50 0))
-			(jumpBonus 
-				(cond
-					((and (= (abs vOffset) 2) (= (getValue x1 (+ y1 vMov) mat) nextP)) 50)
-					((and (= (abs hOffset) 2) (= (getValue (+ x1 hMov) y1 mat) nextP)) 50)
-					('t 0)
+			
+			(poz
+				(+ sPoz 
+					(if (> p1ArrayCount p2ArrayCount)
+						(* (- p1ArrayCount p2ArrayCount) 160)
+						(* p1ArrayCount 160)
+					)
 				)
 			)
-			(vertBonus (* (sumVertical x2 y2 p mat N 0) 200))
-			(rightDiagBonus (* (sumDiagonalRight x2 y2 p mat N 0) 200))
-			(leftDiagBonus (* (sumDiagonalLeft x2 y2 p mat N 0) 200))
-			(horPenalty (* (sumHorizontal x2 y2 p mat N 0) -75))
+			(neg
+				(- sNeg
+					(if (> p2ArrayCount p1ArrayCount)
+						(* (- p2ArrayCount p1ArrayCount) -160)
+						(* p2ArrayCount -160)
+					)
+				)
+			)
 		)
-		(if (= p 1)
-			(+ positionEval (+ edgeBonus jumpBonus vertBonus rightDiagBonus leftDiagBonus horPenalty)) vertSandwichBonus horSandwichBonus))
-			(- positionEval (+ edgeBonus jumpBonus vertBonus rightDiagBonus leftDiagBonus horPenalty)) vertSandwichBonus horSandwichBonus))
+		(if (> poz (abs neg))
+			poz
+			neg
 		)
 	)
 )
