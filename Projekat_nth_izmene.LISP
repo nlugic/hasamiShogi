@@ -910,7 +910,7 @@
 	)
 )
 
-;vrsi evaluaciju poteza pot koji ce biti odigran nad stanjem mat
+;vrsi evaluaciju poteza pot koji je odigran nad stanjem mat
 ;uzima se u obzir broj figura oba igraca, daje se mali bonus za potez po ivici polja i za preskok
 ;daje se bonus za vertikalni/dijagonalni niz, kao i kazna za horizontalni niz
 ;daje se bonus za ulazak u sendvic, jer se tada sprecava protivnikovo kompletiranje sendvica

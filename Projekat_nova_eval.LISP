@@ -821,6 +821,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 4. FAZA ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;broji moguce sendvice igraca p pocevsi od vrste i
 (defun sandwichCount (mat p i N)
 	(cond
 		((< N i) 0)
@@ -828,6 +829,7 @@
 	)
 )
 
+;broji moguce sendvice igraca p u i-toj vrsti
 (defun countSandwichesInRow (mat col p i j N)
 	(cond
 		((< N j) -1)
@@ -846,7 +848,7 @@
 					(vSOpen (or (and (null vSBegin) (not (null vSEnd))) (and (not (null vSBegin)) (null vSEnd))))
 				)
 				(cond
-					((and hSOpen vSOpen) (+ (countSandwichesInRow mat col p i (1+ j) N) 2))
+					((and hSOpen vSOpen) (countSandwichesInRow mat col p i (1+ j) N))
 					(hSOpen (1+ (countSandwichesInRow mat col p i (1+ j) N)))
 					(vSOpen (1+ (countSandwichesInRow mat col p i (1+ j) N)))
 					('t (countSandwichesInRow mat col p i (1+ j) N))
@@ -856,6 +858,7 @@
 	)
 )
 
+;broji nizove igraca p u polju pocevsi od vrste i
 (defun arrayCount (mat p i N)
 	(cond
 		((< (- N 2) i) 0)
@@ -863,6 +866,7 @@
 	)
 )
 
+;broji nizove igraca p u i-toj vrsti
 (defun countArraysInRow (mat col p i j N)
 	(cond
 		((< N j) 0)
@@ -884,6 +888,8 @@
 	)
 )
 
+;evaluira stanje mat
+;broji moguce sendvice igraca 1 i 2, kao i nizove figura tih igraca i u zavisnosti od toga racuna vrednost
 (defun stateEval (mat N)
 	(let*
 		(
