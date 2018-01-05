@@ -56,7 +56,7 @@
 			(move
 				(if (= currP 1)
 					(promptForTurn currP '() mat)
-					(car (alphaBeta '() mat currP 3 -5000 5000 (getN mat)))
+					(car (alphaBeta '() mat currP 4 -5000 5000 (getN mat)))
 					;(let*
 					;	(
 					;		(allMoves (getMoveList mat currP))
@@ -807,11 +807,14 @@
 ;za sada se vrsi samo ispitivanje da li ima pobednika
 (defun evaluateState (pot mat p N)
 	(let
-		((rez (isWin (caaar pot) (cadaar pot) p mat N)))
+		(
+			(rez (isWin (caaar pot) (cadaar pot) p mat N))
+			(cpot (car pot))
+		)
 		(cond
-			((and (= p 1) rez) (cons pot (list 3000)))
-			((and (= p 2) rez) (cons pot (list -3000)))
-			('t (cons (car pot) (list (stateEval pot mat p N))))
+			((and (= p 1) rez) (cons cpot (list 3000)))
+			((and (= p 2) rez) (cons cpot (list -3000)))
+			('t (cons cpot (list (stateEval pot mat p N))))
 		)
 	)
 )
@@ -838,6 +841,7 @@
 	)
 )
 
+;krece se u sva 4 pravca pocevsi od pozicije (i, j) i vraca broj figura igraca p koje gadjaju tu poziciju
 (defun threatAnalyze (mat i j p N hDir vDir)
 	(cond
 		((and (zerop hDir) (zerop vDir))
@@ -864,6 +868,7 @@
 	)
 )
 
+;krece se po horizontali pocevsi od polja (i, j) i odredjuje koliko protivnickih figura moze da zatvori sendvic
 (defun horSandwichThreatCount (mat i j p N direction)
 	(cond
 		((zerop direction) (+ (horSandwichThreatCount mat i j p N -1) (horSandwichThreatCount mat i j p N 1)))
@@ -884,6 +889,7 @@
 	)
 )
 
+;krece se po vertikali pocevsi od polja (i, j) i odredjuje koliko protivnickih figura moze da zatvori sendvic
 (defun vertSandwichThreatCount (mat i j p N direction)
 	(cond
 		((zerop direction) (+ (vertSandwichThreatCount mat i j p N -1) (vertSandwichThreatCount mat i j p N 1)))
@@ -943,7 +949,7 @@
 						
 			(positionEval (* (- (getNX mat) (getNO mat)) 200))
 			(edgeBonus (if (or (zerop x2) (= x2 (1- N))) 50 0))
-			(jumpBonus 
+			(jumpBonus
 				(cond
 					((and (= (abs vOffset) 2) (= (getValue x1 (+ y1 vMov) mat) nextP)) 50)
 					((and (= (abs hOffset) 2) (= (getValue (+ x1 hMov) y1 mat) nextP)) 50)
@@ -956,8 +962,8 @@
 			(horPenalty (* (sumHorizontal x2 y2 p mat N 0) -75))
 		)
 		(if (= p 1)
-			(+ positionEval (+ edgeBonus jumpBonus vertBonus rightDiagBonus leftDiagBonus horPenalty)) vertSandwichBonus horSandwichBonus))
-			(- positionEval (+ edgeBonus jumpBonus vertBonus rightDiagBonus leftDiagBonus horPenalty)) vertSandwichBonus horSandwichBonus))
+			(+ positionEval (+ edgeBonus jumpBonus vertBonus rightDiagBonus leftDiagBonus horPenalty vertSandwichBonus horSandwichBonus))
+			(- positionEval (+ edgeBonus jumpBonus vertBonus rightDiagBonus leftDiagBonus horPenalty vertSandwichBonus horSandwichBonus))
 		)
 	)
 )

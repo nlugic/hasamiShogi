@@ -56,7 +56,7 @@
 			(move
 				(if (= currP 1)
 					(promptForTurn currP '() mat)
-					(car (alphaBeta '() mat currP 3 -2001 2001 (getN mat)))
+					(car (alphaBeta '() mat currP 4 -5000 5000 (getN mat)))
 					;(let*
 					;	(
 					;		(allMoves (getMoveList mat currP))
@@ -747,8 +747,8 @@
 		((listaPoteza (getMoveList mat p N)))
 		(cond
 			((or (null listaPoteza) (zerop d)) (evaluateState pot mat p N))
-			((= p 1) (maxState mat listapoteza (cons (car listaPoteza) (list -1000)) d alfa beta N))
-			('t (minState mat listapoteza (cons (car listaPoteza) (list 1000)) d alfa beta N))
+			((= p 1) (maxState mat listapoteza (cons (car listaPoteza) (list -5000)) d alfa beta N))
+			('t (minState mat listapoteza (cons (car listaPoteza) (list 5000)) d alfa beta N))
 		)
 	)
 )
@@ -804,11 +804,14 @@
 ;za sada se vrsi samo ispitivanje da li ima pobednika
 (defun evaluateState (pot mat p N)
 	(let
-		((rez (isWin (caaar pot) (cadaar pot) p mat N)))
+		(
+			(rez (isWin (caaar pot) (cadaar pot) p mat N))
+			(cpot (car pot))
+		)
 		(cond
-			((and (= p 1) rez) (cons pot (list 2000)))
-			((and (= p 2) rez) (cons pot (list -2000)))
-			('t (cons (car pot) (lista (+ (cadr pot) (stateEval pot mat p N)))))
+			((and (= p 1) rez) (cons cpot (list 3000)))
+			((and (= p 2) rez) (cons cpot (list -3000)))
+			('t (cons cpot (list (stateEval pot mat p N))))
 		)
 	)
 )
