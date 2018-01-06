@@ -524,7 +524,7 @@
 (defun sumDiagonalLeft (i j player mat n direction)
 	(cond
 		((or (< i 0) (< j 0)) 0)
-		((= direction 0) (+ 1 (sumDiagonalLeft (1+ i) (1- j) player mat n -1) (sumDiagonalLeft (1+ i) (1- j) player mat n 1)))
+		((= direction 0) (+ 1 (sumDiagonalLeft (1+ i) (1- j) player mat n -1) (sumDiagonalLeft (1- i) (1+ j) player mat n 1)))
 		((< direction 0)
 			(cond
 				((and (equal (getValue i j mat) player) (notInOwnField i  player n)) (+ (sumDiagonalLeft (1+ i) (1- j) player mat n -1) 1))
@@ -533,7 +533,7 @@
 		)
 		('t
 			(cond
-				((and (equal (getValue i j mat) player) (notInOwnField i player n)) (+ (sumDiagonalLeft (1+ i) (1- j) player mat n 1) 1))
+				((and (equal (getValue i j mat) player) (notInOwnField i player n)) (+ (sumDiagonalLeft (1- i) (1+ j) player mat n 1) 1))
 				('t 0)
 			)
 		)
@@ -1126,6 +1126,27 @@
 
 ;;;
 
+;vraca broj uzastopnih figura igraca p po horizontali
+(defun sumHorizontal (i j p mat n direction)
+	(cond
+		((or (< i 0) (< j 0)) 0)
+		((= direction 0) (+ 1 (sumHorizontal i (1+ j) p mat n -1) (sumHorizontal i (1- j) p mat n 1)))
+		((< direction 0)
+			(cond
+				((and (equal (getValue i j mat) p) (notInOwnField i p n)) (+ (sumHorizontal i (1+ j) p mat n -1) 1))
+				('t 0)
+			)
+		)
+		('t
+			(cond
+				((and (equal (getValue i j mat) p) (notInOwnField i p n)) (+ (sumHorizontal i (1- j) p mat n 1) 1))
+				('t 0)
+			)
+		)
+	)
+)
+
+;ispituje postojanje pretnje po polje (i, j) tako sto ide u svim pravcima i trazi protivnicku figuru
 (defun threatAnalyze (mat i j p hPom vPom jumpCheck)
 	(cond
 		((and (zerop hPom) (zerop vPom))
@@ -1158,6 +1179,7 @@
 	)
 )
 
+;formira listu cinjenica koje se koriste u zakljucivanju
 (defun formirajCinjenice (mat i N)
 	(cond
 		((< N i) '())
@@ -1165,6 +1187,8 @@
 	)
 )
 
+;izdvaja cinjenice za svako polje i formira konacni niz cinjenica
+;gleda se pripadnost poziciji, ko gadja koju poziciju, kao i postojanje niza odredjenog igraca
 (defun cinjeniceVrste (mat i j N)
 	(cond
 		((< N j) '())
@@ -1178,22 +1202,31 @@
 					('t
 						(let*
 							(
-								(p1Gadja (threatAnalyze mat i j 1 0 0 '()))
-								(p2Gadja (threatAnalyze mat i j 2 0 0 '()))
-								(gadjaju
-									(cond
-										((and p1Gadja p2Gadja)
-											(cons (cons 'gadja (cons ''1 (cons i (list j))))
-													(list (cons 'gadja (cons ''2 (cons i (list j)))))
-											)
-										)
-										(p1Gadja (list (cons 'gadja (cons ''1 (cons i (list j))))))
-										(p2Gadja (list (cons 'gadja (cons ''2 (cons i (list j))))))
-										('t '())
-									)
-								)
+								(p1Gadja (if (threatAnalyze mat i j 1 0 0 '()) (list (cons 'gadja (cons ''1 (cons i (list j))))) '()))
+								(p2Gadja (if (threatAnalyze mat i j 2 0 0 '()) (list (cons 'gadja (cons ''2 (cons i (list j))))) '()))
+								
+								(p1VertNiz (if (and (> (sumVertical i j 1 mat N 0) 2) (> i 1) (< i (1- N))) 
+									(list (cons 'vNiz (cons ''1 (cons i (list j))))) '()))
+								(p1LDiagNiz (if (and (> (sumDiagonalLeft i j 1 mat N 0) 2) (> i 1) (< i (1- N)))
+									(list (cons 'lDNiz (cons ''1 (cons i (list j))))) '()))
+								(p1RDiagNiz (if (and (> (sumDiagonalRight i j 1 mat N 0) 2) (> i 1) (< i (1- N)))
+									(list (cons 'rDNiz (cons ''1 (cons i (list j))))) '()))
+								(p1HorNiz (if (and (> (sumHorizontal i j 1 mat N 0) 2) (> i 1) (< i (1- N)))
+									(list (cons 'hNiz (cons ''1 (cons i (list j))))) '()))
+								
+								(p2VertNiz (if (and (> (sumVertical i j 2 mat N 0) 2) (> i 1) (< i (1- N))) 
+									(list (cons 'vNiz (cons ''2 (cons i (list j))))) '()))
+								(p2LDiagNiz (if (and (> (sumDiagonalLeft i j 2 mat N 0) 2) (> i 1) (< i (1- N)))
+									(list (cons 'lDNiz (cons ''2 (cons i (list j))))) '()))
+								(p2RDiagNiz (if (and (> (sumDiagonalRight i j 2 mat N 0) 2) (> i 1) (< i (1- N))) 
+									(list (cons 'rDNiz (cons ''2 (cons i (list j))))) '()))
+								(p2HorNiz (if (and (> (sumHorizontal i j 2 mat N 0) 2) (> i 1) (< i (1- N)))
+									(list (cons 'hNiz (cons ''2 (cons i (list j))))) '()))
 							)
-							(append gadjaju (cinjeniceVrste mat i (1+ j) N))
+							(append
+								p1Gadja p2Gadja p1VertNiz p1LDiagNiz p1RDiagNiz p1HorNiz p2VertNiz p2LDiagNiz p2RDiagNiz p2HorNiz
+								(cinjeniceVrste mat i (1+ j) N)
+							)
 						)
 					)
 				)
@@ -1202,35 +1235,115 @@
 	)
 )
 
-(defun !eq (x y)
-	(equal x y)
-)
+;pomocne funkcije za definisanje pravila, nasiroko poznate
+(defun !eq (x y) (equal x y))
+(defun !ne (x y) (not (equal x y)))
 
-(defun !ne (x y)
-	(not (equal x y))
-)
+(defun =dec (br) (1- br))
+(defun =inc (br) (1+ br))
 
-(defun =dec (br)
-	(1- br)
-)
-
-(defun =inc (br)
-	(1+ br)
-)
-
+;definicije pravila za zakljucivanje
+;razlikujemo nove nizove igraca 1/2, blokove koje pravi igrac 1/2, samim tim i prilike za sendvic
+;razlikujemo i prilike za niz, odnosno produzenje niza na vise od 2 figure
 (defparameter *HS-RULES*
 	'(
+		(if (and (polje ?x ?i ?j)(gadja ?x (=inc ?i) ?j)(!eq ?x '1)) then (p1NoviNiz ?x ?i ?j))
+		(if (and (polje ?x ?i ?j)(gadja ?x (=dec ?i) ?j)(!eq ?x '1)) then (p1NoviNiz ?x ?i ?j))
+		(if (and (polje ?x ?i ?j)(gadja ?x ?i (=inc ?j))(!eq ?x '1)) then (p1NoviNiz ?x ?i ?j))
+		(if (and (polje ?x ?i ?j)(gadja ?x ?i (=dec ?j))(!eq ?x '1)) then (p1NoviNiz ?x ?i ?j))
+		(if (and (polje ?x ?i ?j)(gadja ?x (=inc ?i) (=inc ?j))(!eq ?x '1)) then (p1NoviNiz ?x ?i ?j))
+		(if (and (polje ?x ?i ?j)(gadja ?x (=inc ?i) (=dec ?j))(!eq ?x '1)) then (p1NoviNiz ?x ?i ?j))
+		(if (and (polje ?x ?i ?j)(gadja ?x (=dec ?i) (=inc ?j))(!eq ?x '1)) then (p1NoviNiz ?x ?i ?j))
+		(if (and (polje ?x ?i ?j)(gadja ?x (=dec ?i) (=dec ?j))(!eq ?x '1)) then (p1NoviNiz ?x ?i ?j))
+	
+		(if (and (polje ?x ?i ?j)(gadja ?x (=inc ?i) ?j)(!eq ?x '2)) then (p2NoviNiz ?x ?i ?j))
+		(if (and (polje ?x ?i ?j)(gadja ?x (=dec ?i) ?j)(!eq ?x '2)) then (p2NoviNiz ?x ?i ?j))
+		(if (and (polje ?x ?i ?j)(gadja ?x ?i (=inc ?j))(!eq ?x '2)) then (p2NoviNiz ?x ?i ?j))
+		(if (and (polje ?x ?i ?j)(gadja ?x ?i (=dec ?j))(!eq ?x '2)) then (p2NoviNiz ?x ?i ?j))
+		(if (and (polje ?x ?i ?j)(gadja ?x (=inc ?i) (=inc ?j))(!eq ?x '2)) then (p2NoviNiz ?x ?i ?j))
+		(if (and (polje ?x ?i ?j)(gadja ?x (=inc ?i) (=dec ?j))(!eq ?x '2)) then (p2NoviNiz ?x ?i ?j))
+		(if (and (polje ?x ?i ?j)(gadja ?x (=dec ?i) (=inc ?j))(!eq ?x '2)) then (p2NoviNiz ?x ?i ?j))
+		(if (and (polje ?x ?i ?j)(gadja ?x (=dec ?i) (=dec ?j))(!eq ?x '2)) then (p2NoviNiz ?x ?i ?j))
+	
+		(if (and (vNiz ?x ?i ?j)(!eq ?x '2)(gadja ?y ?i ?j)(!eq ?y '1)) then (p1BlokVNiza ?x ?i ?j))
+		(if (and (hNiz ?x ?i ?j)(!eq ?x '2)(gadja ?y ?i ?j)(!eq ?y '1)) then (p1BlokHNiza ?x ?i ?j))
+		(if (and (lDNiz ?x ?i ?j)(!eq ?x '2)(gadja ?y ?i ?j)(!eq ?y '1)) then (p1BlokLDNiza ?x ?i ?j))
+		(if (and (rDNiz ?x ?i ?j)(!eq ?x '2)(gadja ?y ?i ?j)(!eq ?y '1)) then (p1BlokRDNiza ?x ?i ?j))
 		
+		(if (and (vNiz ?x ?i ?j)(!eq ?x '1)(gadja ?y ?i ?j)(!eq ?y '2)) then (p2BlokVNiza ?x ?i ?j))
+		(if (and (hNiz ?x ?i ?j)(!eq ?x '1)(gadja ?y ?i ?j)(!eq ?y '2)) then (p2BlokHNiza ?x ?i ?j))
+		(if (and (lDNiz ?x ?i ?j)(!eq ?x '1)(gadja ?y ?i ?j)(!eq ?y '2)) then (p2BlokLDNiza ?x ?i ?j))
+		(if (and (rDNiz ?x ?i ?j)(!eq ?x '1)(gadja ?y ?i ?j)(!eq ?y '2)) then (p2BlokRDNiza ?x ?i ?j))
+		
+		(if (p1BlokVNiza ?x ?i ?j) then (p1PrilikaZaVSendvic ?x ?i ?j))
+		(if (p1BlokHNiza ?x ?i ?j) then (p1PrilikaZaHSendvic ?x ?i ?j))
+		
+		(if (p2BlokVNiza ?x ?i ?j) then (p2PrilikaZaVSendvic ?x ?i ?j))
+		(if (p2BlokHNiza ?x ?i ?j) then (p2PrilikaZaHSendvic ?x ?i ?j))
+		
+		(if (and (vNiz ?x ?i ?j)(gadja ?x ?i ?j)(!eq ?x '1)) then (p1PrilikaZaVNiz ?x ?i ?j))
+		(if (and (lDNiz ?x ?i ?j)(gadja ?x ?i ?j)(!eq ?x '1)) then (p1PrilikaZaLDNiz ?x ?i ?j))
+		(if (and (rDNiz ?x ?i ?j)(gadja ?x ?i ?j)(!eq ?x '1)) then (p1PrilikaZaRDNiz ?x ?i ?j))
+		
+		(if (and (vNiz ?x ?i ?j)(gadja ?x ?i ?j)(!eq ?x '2)) then (p2PrilikaZaVNiz ?x ?i ?j))
+		(if (and (lDNiz ?x ?i ?j)(gadja ?x ?i ?j)(!eq ?x '2)) then (p2PrilikaZaLDNiz ?x ?i ?j))
+		(if (and (rDNiz ?x ?i ?j)(gadja ?x ?i ?j)(!eq ?x '2)) then (p2PrilikaZaRDNiz ?x ?i ?j))
 	)
 )
 
-(defun stateEval (mat p N)
+;evaluacija stanja koja koristi masinu za zakljucivanje
+;vrsi se poziciona evaluacija, tj. daju se poeni za svaku figuru vise od protivnika
+;racuna se broj prilika za sendvic/niz igraca, kao i broj novih nizova za oba igraca
+;sve se sabira, pritom mnozimo odgovarajucim koeficijentima
+;na kraju se vraca vrednost koja je veca po abs vrednosti
+(defun stateEval (mat N)
 	(let*
 		(
+			(NX (getNX mat))
+			(NO (getNO mat))
+			(pozEval (* (- NX NO) 50))
 			(cinjenice (formirajCinjenice mat 0 N))
+			(prep (prepare-knowledge *HS-RULES* cinjenice 5))
+			(p1Prilike
+				(+
+					(count-results '(p1PrilikaZaVSendvic ?x ?i ?j))
+					(count-results '(p1PrilikaZaHSendvic ?x ?i ?j))
+					(count-results '(p1PrilikaZaVNiz ?x ?i ?j))
+					(count-results '(p1PrilikaZaLDNiz ?x ?i ?j))
+					(count-results '(p1PrilikaZaRDNiz ?x ?i ?j))
+				)
+			)
+			(p1NoviNizovi (count-results '(p1NoviNiz ?x ?i ?j)))
+			(p1Blokovi
+				(+
+					(count-results '(p2BlokVNiza ?x ?i ?j))
+					(count-results '(p2BlokHNiza ?x ?i ?j))
+					(count-results '(p2BlokLDNiza ?x ?i ?j))
+					(count-results '(p2BlokRDNiza ?x ?i ?j))
+				)
+			)
+			(p2Prilike
+				(+
+					(count-results '(p2PrilikaZaVSendvic ?x ?i ?j))
+					(count-results '(p2PrilikaZaHSendvic ?x ?i ?j))
+					(count-results '(p2PrilikaZaVNiz ?x ?i ?j))
+					(count-results '(p2PrilikaZaLDNiz ?x ?i ?j))
+					(count-results '(p2PrilikaZaRDNiz ?x ?i ?j))
+				)
+			)
+			(p2NoviNizovi (count-results '(p2NoviNiz ?x ?i ?j)))
+			(p2Blokovi
+				(+
+					(count-results '(p1BlokVNiza ?x ?i ?j))
+					(count-results '(p1BlokHNiza ?x ?i ?j))
+					(count-results '(p1BlokLDNiza ?x ?i ?j))
+					(count-results '(p1BlokRDNiza ?x ?i ?j))
+				)
+			)
+			
+			(p1Poeni (+ pozEval (* p1Prilike 100) (* p1NoviNizovi 105) (* p1Blokovi -120)))
+			(p2Poeni (+ pozEval (* p2Prilike -100) (* p2NoviNizovi -105) (* p2Blokovi 120)))
 		)
-		(
-		
-		)
+		(if (< p1Poeni (abs p2Poeni)) p2Poeni p1Poeni)
 	)
 )
