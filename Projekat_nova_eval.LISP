@@ -914,9 +914,10 @@
 				)
 			)
 		)
-		(if (> poz (abs neg))
-			poz
-			neg
-		)
+		(+ poz neg)
+		;(if (> poz (abs neg))
+		;	poz
+		;	neg
+		;)
 	)
 )
