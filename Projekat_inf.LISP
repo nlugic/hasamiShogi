@@ -767,13 +767,14 @@
 			(let*
 				(
 					(novaMat (newState mat (car listpot)))
-					(currPV (list (car listPot) (cadr (alphaBeta (list (car listPot) 0) novaMat 2 (1- d) alfa beta N))))
+                                        (novoP (getP novaMat))
+					(currPV (list (car listPot) (cadr (alphaBeta (list (car listPot) 0) novaMat novoP (1- d) alfa beta N))))
 				)
 				(cond
 					((<= beta alfa) maxPV)
 					((> (cadr currPV) alfa)  (maxState mat (cdr listPot) currPV d (cadr currPV) beta N))
 					((> (cadr currPV) (cadr maxPV)) (maxState mat (cdr listPot) currPV d alfa beta N))
-					('t (maxState novaMat (cdr listPot) maxPV d alfa beta N))
+					('t (maxState mat (cdr listPot) maxPV d alfa beta N))
 				)
 			)
 		)
@@ -789,14 +790,15 @@
 		('t
 			(let*
 				(
-					(novaMat (newState mat (car listpot))) 
-					(currPV (list (car listPot) (cadr (alphaBeta (list (car listPot) 0) novaMat 1 (1- d) alfa beta N))))
+					(novaMat (newState mat (car listpot)))
+                                        (novoP (getP novaMat))
+					(currPV (list (car listPot) (cadr (alphaBeta (list (car listPot) 0) novaMat novoP (1- d) alfa beta N))))
 				)
 				(cond
 					((<= beta alfa) minPV)
 					((< (cadr currPV) beta) (minState mat (cdr listPot) currPV d alfa (cadr currPV) N))
 					((< (cadr currPV) (cadr minPV)) (minState mat (cdr listPot) currPV d alfa beta N))
-					('t (minState novaMat (cdr listPot) minPV d alfa beta N))
+					('t (minState mat (cdr listPot) minPV d alfa beta N))
 				)
 			)
 		)
@@ -811,7 +813,7 @@
 		(cond
 			((and (= p 1) rez) (cons pot (list 3000)))
 			((and (= p 2) rez) (cons pot (list -3000)))
-			('t (cons (car pot) (list (stateEval mat p N))))
+			('t (cons (car pot) (list (stateEval mat N))))
 		)
 	)
 )
@@ -1303,7 +1305,6 @@
 			(NO (getNO mat))
 			(pozEval (* (- NX NO) 50))
 			(cinjenice (formirajCinjenice mat 0 N))
-			(prep (prepare-knowledge *HS-RULES* cinjenice 5))
 			(p1Prilike
 				(+
 					(count-results '(p1PrilikaZaVSendvic ?x ?i ?j))
@@ -1344,6 +1345,7 @@
 			(p1Poeni (+ pozEval (* p1Prilike 100) (* p1NoviNizovi 105) (* p1Blokovi -120)))
 			(p2Poeni (+ pozEval (* p2Prilike -100) (* p2NoviNizovi -105) (* p2Blokovi 120)))
 		)
+		(prepare-knowledge *HS-RULES* cinjenice 5)
 		(if (< p1Poeni (abs p2Poeni)) p2Poeni p1Poeni)
 	)
 )

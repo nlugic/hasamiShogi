@@ -524,7 +524,7 @@
 (defun sumDiagonalLeft (i j player mat n direction)
 	(cond
 		((or (< i 0) (< j 0)) 0)
-		((= direction 0) (+ 1 (sumDiagonalLeft (1+ i) (1- j) player mat n -1) (sumDiagonalLeft (1+ i) (1- j) player mat n 1)))
+		((= direction 0) (+ 1 (sumDiagonalLeft (1+ i) (1- j) player mat n -1) (sumDiagonalLeft (1- i) (1+ j) player mat n 1)))
 		((< direction 0)
 			(cond
 				((and (equal (getValue i j mat) player) (notInOwnField i  player n)) (+ (sumDiagonalLeft (1+ i) (1- j) player mat n -1) 1))
@@ -533,7 +533,7 @@
 		)
 		('t
 			(cond
-				((and (equal (getValue i j mat) player) (notInOwnField i player n)) (+ (sumDiagonalLeft (1+ i) (1- j) player mat n 1) 1))
+				((and (equal (getValue i j mat) player) (notInOwnField i player n)) (+ (sumDiagonalLeft (1- i) (1+ j) player mat n 1) 1))
 				('t 0)
 			)
 		)
@@ -767,13 +767,14 @@
 			(let*
 				(
 					(novaMat (newState mat (car listpot)))
-					(currPV (list (car listPot) (cadr (alphaBeta (list (car listPot) 0) novaMat 2 (1- d) alfa beta N))))
+					(novoP (getP novaMat))
+					(currPV (list (car listPot) (cadr (alphaBeta (list (car listPot) 0) novaMat novoP (1- d) alfa beta N))))
 				)
 				(cond
 					((<= beta alfa) maxPV)
 					((> (cadr currPV) alfa)  (maxState mat (cdr listPot) currPV d (cadr currPV) beta N))
 					((> (cadr currPV) (cadr maxPV)) (maxState mat (cdr listPot) currPV d alfa beta N))
-					('t (maxState novaMat (cdr listPot) maxPV d alfa beta N))
+					('t (maxState mat (cdr listPot) maxPV d alfa beta N))
 				)
 			)
 		)
@@ -789,14 +790,15 @@
 		('t
 			(let*
 				(
-					(novaMat (newState mat (car listpot))) 
-					(currPV (list (car listPot) (cadr (alphaBeta (list (car listPot) 0) novaMat 1 (1- d) alfa beta N))))
+					(novaMat (newState mat (car listpot)))
+					(novoP (getP novaMat))
+					(currPV (list (car listPot) (cadr (alphaBeta (list (car listPot) 0) novaMat novoP (1- d) alfa beta N))))
 				)
 				(cond
 					((<= beta alfa) minPV)
 					((< (cadr currPV) beta) (minState mat (cdr listPot) currPV d alfa (cadr currPV) N))
 					((< (cadr currPV) (cadr minPV)) (minState mat (cdr listPot) currPV d alfa beta N))
-					('t (minState novaMat (cdr listPot) minPV d alfa beta N))
+					('t (minState mat (cdr listPot) minPV d alfa beta N))
 				)
 			)
 		)

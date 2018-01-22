@@ -56,7 +56,7 @@
 			(move
 				(if (= currP 1)
 					(promptForTurn currP '() mat)
-					(car (alphaBeta '() mat currP 4 -5000 5000 (getN mat)))
+					(car (alphaBeta '() mat currP 3 -5000 5000 (getN mat)))
 					;(let*
 					;	(
 					;		(allMoves (getMoveList mat currP))
@@ -522,16 +522,16 @@
 (defun sumDiagonalLeft (i j player mat n direction)
 	(cond
 		((or (< i 0) (< j 0)) 0)
-		((= direction 0) (+ 1 (sumDiagonalLeft (1+ i) (1- j) player mat n -1) (sumDiagonalLeft (1+ i) (1- j) player mat n 1)))
+		((= direction 0) (+ 1 (sumDiagonalLeft (1+ i) (1- j) player mat n -1) (sumDiagonalLeft (1- i) (1+ j) player mat n 1)))
 		((< direction 0)
 			(cond
-				((and (equal (getValue i j mat) player) (notInOwnField i  player n)) (+ (sumDiagonalLeft (1+ i) (1- j) player mat n -1) 1))
+				((and (equal (getValue i j mat) player) (notInOwnField i player n)) (+ (sumDiagonalLeft (1+ i) (1- j) player mat n -1) 1))
 				('t 0)
 			)
 		)
 		('t
 			(cond
-				((and (equal (getValue i j mat) player) (notInOwnField i player n)) (+ (sumDiagonalLeft (1+ i) (1- j) player mat n 1) 1))
+				((and (equal (getValue i j mat) player) (notInOwnField i player n)) (+ (sumDiagonalLeft (1- i) (1+ j) player mat n 1) 1))
 				('t 0)
 			)
 		)
@@ -764,13 +764,14 @@
 			(let*
 				(
 					(novaMat (newState mat (car listpot)))
-					(currPV (list (car listPot ) (cadr (alphaBeta (list (car listPot) 0) novaMat 2 (1- d) alfa beta N))))
+					(novoP (getP novaMat))
+					(currPV (list (car listPot ) (cadr (alphaBeta (list (car listPot) 0) novaMat novoP (1- d) alfa beta N))))
 				)
 				(cond
 					((< beta (1- alfa)) maxPV)
 					((> (cadr currPV) alfa)  (maxState mat (cdr listPot) currPV d (cadr currPV) beta N))
 					((> (cadr currPV) (cadr maxPV)) (maxState mat (cdr listPot) currPV d alfa beta N))
-					('t (maxState novaMat (cdr listPot) maxPV d alfa beta N))
+					('t (maxState mat (cdr listPot) maxPV d alfa beta N))
 				)
 			)
 		)
@@ -786,14 +787,15 @@
 		('t
 			(let*
 				(
-					(novaMat (newState mat (car listpot))) 
-					(currPV (list (car listPot) (cadr (alphaBeta (list (car listPot) 0) novaMat 1 (1- d) alfa beta N))))
+					(novaMat (newState mat (car listpot)))
+					(novoP (getP novaMat))
+					(currPV (list (car listPot) (cadr (alphaBeta (list (car listPot) 0) novaMat novoP (1- d) alfa beta N))))
 				)
 				(cond
 					((< beta (1- alfa)) minPV)
 					((< (cadr currPV) beta) (minState mat (cdr listPot) currPV d alfa (cadr currPV) N))
 					((< (cadr currPV) (cadr minPV)) (minState mat (cdr listPot) currPV d alfa beta N))
-					('t (minState novaMat (cdr listPot) minPV d alfa beta N))
+					('t (minState mat (cdr listPot) minPV d alfa beta N))
 				)
 			)
 		)
@@ -809,8 +811,8 @@
 			(cpot (car pot))
 		)
 		(cond
-			((and (= p 1) rez) (cons cpot (list 3000)))
-			((and (= p 2) rez) (cons cpot (list -3000)))
+			((and (= p 1) rez) (cons cpot (list 5000)))
+			((and (= p 2) rez) (cons cpot (list -5000)))
 			('t (cons cpot (list (stateEval pot mat p N))))
 		)
 	)
@@ -876,18 +878,18 @@
 			(hMov (cond ((< hOffset 0) -1) ((> hOffset 0) 1) ('t 0)))
 			(vMov (cond ((< vOffset 0) -1) ((> vOffset 0) 1) ('t 0)))
 			
-			(positionEval (* (- (getNX mat) (getNO mat)) 5))
+			(positionEval (* (- (getNX mat) (getNO mat)) 10))
 			(edgeBonus (if (or (zerop x2) (= x2 (1- N))) 10 0))
 			(jumpBonus 
 				(cond
-					((and (= (abs vOffset) 2) (= (getValue x1 (+ y1 vMov) mat) nextP)) 30)
-					((and (= (abs hOffset) 2) (= (getValue (+ x1 hMov) y1 mat) nextP)) 30)
+					((and (= (abs vOffset) 2) (= (getValue x1 (+ y1 vMov) mat) nextP)) 15)
+					((and (= (abs hOffset) 2) (= (getValue (+ x1 hMov) y1 mat) nextP)) 15)
 					('t 0)
 				)
 			)
-			(vertBonus (* (sumVertical x2 y2 p mat N 0) 60))
-			(rightDiagBonus (* (sumDiagonalRight x2 y2 p mat N 0) 60))
-			(leftDiagBonus (* (sumDiagonalLeft x2 y2 p mat N 0) 60))
+			(vertBonus (* (sumVertical x2 y2 p mat N 0) 70))
+			(rightDiagBonus (* (sumDiagonalRight x2 y2 p mat N 0) 70))
+			(leftDiagBonus (* (sumDiagonalLeft x2 y2 p mat N 0) 70))
 			(horPenalty (* (sumHorizontal x2 y2 p mat N 0) -50))
 			(vertSandwichBonus (* (sandwichNumberHorizontal x2 y2 p nextP mat) 65))
 			(horSandwichBonus (* (sandwichNumberVertical x2 y2 p nextP mat) 65))
