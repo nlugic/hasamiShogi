@@ -816,7 +816,7 @@
 		(cond
 			((and (= p 1) rez) (cons cpot (list 3000)))
 			((and (= p 2) rez) (cons cpot (list -3000)))
-			('t (cons cpot (list (stateEval mat N))))
+			('t (cons cpot (list (stateEval cpot mat p N))))
 		)
 	)
 )
@@ -919,10 +919,10 @@
 (defun stateEval (pot mat p N)
 	(let*
 		(
-			(x1 (caaar pot))
-			(y1 (cadaar pot))
-			(x2 (caadar pot))
-			(y2 (cadadr (car pot)))
+			(x1 (caar pot))
+			(y1 (cadar pot))
+			(x2 (caadr pot))
+			(y2 (cadadr pot))
 			(nextP (logxor p 3))
 			(hOffset (- x2 x1))
 			(vOffset (- y2 y1))
@@ -947,7 +947,7 @@
 					('t (* (vertSandwichThreatCount mat x2 y2 p N 0) -150))
 				)
 			)
-						
+			
 			(positionEval (* (- (getNX mat) (getNO mat)) 200))
 			(edgeBonus (if (or (zerop x2) (= x2 (1- N))) 50 0))
 			(jumpBonus
