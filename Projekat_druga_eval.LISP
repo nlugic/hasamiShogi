@@ -293,7 +293,7 @@
 		((x (caar turnStruct)) (y (+ (cadar turnStruct) currMove)))
 		(cond
 			((= (- (abs currMove) (abs offset)) 1) '())
-			((and (= (abs offset) 2) (= (getValue x y mat) (logxor p 3)))
+			((and (= (abs offset) 2) (not (= (getValue x y mat) 0)))
 				(if (< currMove 0)
 					(horizontalTurnBlocked (1- currMove) offset turnStruct p mat)
 					(horizontalTurnBlocked (1+ currMove) offset turnStruct p mat)
@@ -316,7 +316,7 @@
 		((x (+ (caar turnStruct) currMove)) (y (cadar turnStruct)))
 		(cond
 			((= (- (abs currMove) (abs offset)) 1) '())
-			((and (= (abs offset) 2) (= (getValue x y mat) (logxor p 3)))
+			((and (= (abs offset) 2) (not (= (getValue x y mat) 0)))
 				(if (< currMove 0)
 					(verticalTurnBlocked (1- currMove) offset turnStruct p mat)
 					(verticalTurnBlocked (1+ currMove) offset turnStruct p mat)
@@ -937,23 +937,23 @@
 			(vSEnd (cadr vertSandwich))
 			(horSandwichBonus
 				(cond
-					((and (not (null hSBegin)) (not (null hSEnd))) (* (- hSEnd hSBegin 1) 150))
+					((and (not (null hSBegin)) (not (null hSEnd))) (* (- hSEnd hSBegin 1) 180))
 					('t (* (horSandwichThreatCount mat x2 y2 p N 0) -150))
 				)
 			)
 			(vertSandwichBonus
 				(cond
-					((and (not (null vSBegin)) (not (null vSEnd))) (* (- vSEnd vSBegin 1) 150))
+					((and (not (null vSBegin)) (not (null vSEnd))) (* (- vSEnd vSBegin 1) 180))
 					('t (* (vertSandwichThreatCount mat x2 y2 p N 0) -150))
 				)
 			)
 			
-			(positionEval (* (- (getNX mat) (getNO mat)) 200))
+			(positionEval (* (- (getNX mat) (getNO mat)) 100))
 			(edgeBonus (if (or (zerop x2) (= x2 (1- N))) 50 0))
 			(jumpBonus
 				(cond
-					((and (= (abs vOffset) 2) (= (getValue x1 (+ y1 vMov) mat) nextP)) 50)
-					((and (= (abs hOffset) 2) (= (getValue (+ x1 hMov) y1 mat) nextP)) 50)
+					((and (= (abs vOffset) 2) (= (getValue x1 (+ y1 vMov) mat) nextP)) 100)
+					((and (= (abs hOffset) 2) (= (getValue (+ x1 hMov) y1 mat) nextP)) 100)
 					('t 0)
 				)
 			)

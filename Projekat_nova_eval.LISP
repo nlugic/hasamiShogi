@@ -293,7 +293,7 @@
 		((x (caar turnStruct)) (y (+ (cadar turnStruct) currMove)))
 		(cond
 			((= (- (abs currMove) (abs offset)) 1) '())
-			((and (= (abs offset) 2) (= (getValue x y mat) (logxor p 3)))
+			((and (= (abs offset) 2) (not (= (getValue x y mat) 0)))
 				(if (< currMove 0)
 					(horizontalTurnBlocked (1- currMove) offset turnStruct p mat)
 					(horizontalTurnBlocked (1+ currMove) offset turnStruct p mat)
@@ -316,7 +316,7 @@
 		((x (+ (caar turnStruct) currMove)) (y (cadar turnStruct)))
 		(cond
 			((= (- (abs currMove) (abs offset)) 1) '())
-			((and (= (abs offset) 2) (= (getValue x y mat) (logxor p 3)))
+			((and (= (abs offset) 2) (not (= (getValue x y mat) 0)))
 				(if (< currMove 0)
 					(verticalTurnBlocked (1- currMove) offset turnStruct p mat)
 					(verticalTurnBlocked (1+ currMove) offset turnStruct p mat)
