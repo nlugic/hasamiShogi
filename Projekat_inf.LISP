@@ -767,7 +767,7 @@
 			(let*
 				(
 					(novaMat (newState mat (car listpot)))
-                                        (novoP (getP novaMat))
+					(novoP (getP novaMat))
 					(currPV (list (car listPot) (cadr (alphaBeta (list (car listPot) 0) novaMat novoP (1- d) alfa beta N))))
 				)
 				(cond
@@ -791,7 +791,7 @@
 			(let*
 				(
 					(novaMat (newState mat (car listpot)))
-                                        (novoP (getP novaMat))
+					(novoP (getP novaMat))
 					(currPV (list (car listPot) (cadr (alphaBeta (list (car listPot) 0) novaMat novoP (1- d) alfa beta N))))
 				)
 				(cond
